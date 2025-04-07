@@ -63,3 +63,81 @@ exports.validateUpdateUser = [
     .isIn(["user", "admin"])
     .withMessage('Role must be either "user" or "admin"'),
 ];
+
+// Validation middleware for creating tickets
+exports.validateCreateTicket = [
+  body("title")
+    .notEmpty()
+    .withMessage("Title is required")
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("Title cannot be more than 100 characters"),
+
+  body("description")
+    .notEmpty()
+    .withMessage("Description is required")
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage("Description cannot be more than 2000 characters"),
+
+  body("category")
+    .notEmpty()
+    .withMessage("Category is required")
+    .isIn(["Hardware", "Software", "Network", "Security", "Account", "Other"])
+    .withMessage("Invalid category selected"),
+
+  body("priority")
+    .optional()
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Invalid priority selected"),
+];
+
+// Validation middleware for updating tickets
+exports.validateUpdateTicket = [
+  body("title")
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("Title cannot be more than 100 characters"),
+
+  body("description")
+    .optional()
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage("Description cannot be more than 2000 characters"),
+
+  body("category")
+    .optional()
+    .isIn(["Hardware", "Software", "Network", "Security", "Account", "Other"])
+    .withMessage("Invalid category selected"),
+
+  body("status")
+    .optional()
+    .isIn(["open", "in progress", "solved"])
+    .withMessage("Invalid status selected"),
+
+  body("priority")
+    .optional()
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Invalid priority selected"),
+
+  body("assignedTo")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid user ID format for assignment"),
+];
+
+// Validation middleware for adding responses to tickets
+exports.validateAddResponse = [
+  body("text")
+    .notEmpty()
+    .withMessage("Response text is required")
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage("Response cannot be more than 1000 characters"),
+
+  body("isInternal")
+    .optional()
+    .isBoolean()
+    .withMessage("isInternal must be a boolean value"),
+];

@@ -44,10 +44,12 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 // Import routes
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
+const ticketRoutes = require("./routes/ticket.routes"); // Add ticket routes
 
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/tickets", ticketRoutes); // Mount ticket routes
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -66,6 +66,16 @@ body {
   text-shadow: 1px 1px 1px black;
 }
 
+.win98-icon {
+  display: block;
+  background-color: #c0c0c0;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  padding: 4px;
+  margin-bottom: 5px;
+  box-shadow: 1px 1px 0 0 #000000;
+}
+
 .page-container {
   margin: 10px 0;
 }

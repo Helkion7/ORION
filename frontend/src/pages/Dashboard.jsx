@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getTickets } from "../services/ticketService";
 import { useAuth } from "../contexts/AuthContext";
+import { FilePlus, ClipboardList, User } from "lucide-react";
 
 const Dashboard = () => {
   const [tickets, setTickets] = useState([]);
@@ -42,18 +43,27 @@ const Dashboard = () => {
             <div className="window-body">
               <div className="desktop-icon-grid">
                 <Link to="/tickets/new" className="desktop-icon">
-                  <img src="https://i.imgur.com/ftUSch1.png" alt="New Ticket" />
+                  <FilePlus
+                    size={32}
+                    className="win98-icon"
+                    style={{ color: "#000", strokeWidth: 1 }}
+                  />
                   <span>New Ticket</span>
                 </Link>
                 <Link to="/tickets" className="desktop-icon">
-                  <img
-                    src="https://i.imgur.com/cxTwSkA.png"
-                    alt="View Tickets"
+                  <ClipboardList
+                    size={32}
+                    className="win98-icon"
+                    style={{ color: "#000", strokeWidth: 1 }}
                   />
                   <span>My Tickets</span>
                 </Link>
                 <Link to="/profile" className="desktop-icon">
-                  <img src="https://i.imgur.com/3NdJpSx.png" alt="Profile" />
+                  <User
+                    size={32}
+                    className="win98-icon"
+                    style={{ color: "#000", strokeWidth: 1 }}
+                  />
                   <span>My Profile</span>
                 </Link>
               </div>

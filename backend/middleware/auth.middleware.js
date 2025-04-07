@@ -43,12 +43,14 @@ exports.protect = async (req, res, next) => {
 
       next();
     } catch (error) {
+      console.error("Token verification error:", error.message);
       return res.status(401).json({
         success: false,
-        error: "Not authorized to access this route",
+        error: "Invalid or expired token",
       });
     }
   } catch (error) {
+    console.error("Auth middleware error:", error);
     next(error);
   }
 };

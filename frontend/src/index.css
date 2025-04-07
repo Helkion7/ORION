@@ -1,0 +1,184 @@
+@import "98.css";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  background-color: #008080;
+  font-family: "Pixelated MS Sans Serif", Arial, sans-serif;
+  -webkit-font-smoothing: none;
+  font-size: 11px;
+}
+
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 40px);
+}
+
+.content-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-icon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+  text-align: center;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.desktop-icon:hover {
+  background-color: rgba(0, 0, 255, 0.3);
+}
+
+.desktop-icon.active {
+  background-color: rgba(0, 0, 255, 0.3);
+}
+
+.desktop-icon img {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 5px;
+}
+
+.desktop-icon span {
+  color: white;
+  text-shadow: 1px 1px 1px black;
+}
+
+.page-container {
+  margin: 10px 0;
+}
+
+.form-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.field-row {
+  margin-bottom: 10px;
+}
+
+.field-row-stacked {
+  margin-bottom: 15px;
+}
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.ticket-list {
+  margin-top: 20px;
+}
+
+.ticket-grid {
+  margin-top: 15px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  margin-right: 5px;
+}
+
+.status-open {
+  background-color: #ffcc00;
+}
+
+.status-in-progress {
+  background-color: #66ccff;
+}
+
+.status-solved {
+  background-color: #66cc66;
+}
+
+.priority-low {
+  color: #008000;
+}
+
+.priority-medium {
+  color: #0000ff;
+}
+
+.priority-high {
+  color: #ff8c00;
+}
+
+.priority-urgent {
+  color: #ff0000;
+}
+
+.error-message {
+  color: #ff0000;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.success-message {
+  color: #008000;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.stat-box {
+  padding: 15px;
+  text-align: center;
+}
+
+.loading-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 200px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  body {
+    padding: 10px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

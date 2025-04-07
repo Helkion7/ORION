@@ -123,7 +123,7 @@ const sendTokenResponse = (user, statusCode, res) => {
   // Set cookie options
   const options = {
     expires: new Date(
-      Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000 // Convert days to milliseconds
+      Date.now() + (process.env.COOKIE_EXPIRE || 30) * 24 * 60 * 60 * 1000 // Convert days to milliseconds with fallback
     ),
     httpOnly: true, // Cookie cannot be accessed by client-side JavaScript
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",

@@ -1,503 +1,728 @@
-# Windows 95 Ticket System Design Guidelines
+Use the documentation below to make the frontend styling
+98.css
+A design system for building faithful recreations of old UIs.
 
-I'll create comprehensive design guidelines for your React ticket system using react95 to achieve an authentic Windows 95 aesthetic. These guidelines will help you maintain consistency throughout your application.
+npm gzip size
 
-## Core Design Principles
+Intro
+98.css is a CSS library for building interfaces that look like Windows 98. See more on GitHub.
 
-1. **Authenticity First**: Stay true to the Windows 95 visual language - flat colors, beveled edges, pixelated icons, and the iconic gray interface.
+My First VB4 Program
 
-2. **Functionality Over Complexity**: Keep interfaces simple and intuitive, following the straightforward approach of Windows 95 applications.
+Hello, world!
 
-3. **System-Like Experience**: Create a complete Windows 95-like environment with desktop elements, windows, and dialog boxes.
+OK
+Cancel
+This library relies on the usage of semantic HTML. To make a button, you'll need to use a <button>. Input elements require labels. Icon buttons rely on aria-label. This page will guide you through that process, but accessibility is a primary goal of this project.
 
-## Layout Structure
+You can override many of the styles of your elements while maintaining the appearance provided by this library. Need more padding on your buttons? Go for it. Need to add some color to your input labels? Be our guest.
 
-### Desktop Layout
+This library does not contain any JavaScript, it merely styles your HTML with some CSS. This means 98.css is compatible with your frontend framework of choice.
 
-- Use a full-screen desktop approach with a taskbar at the bottom
-- Main ticket system should appear as a maximized application window
-- Include desktop icons for quick access to different sections
+Here is an example of 98.css used with React, and an example with vanilla JavaScript. The fastest way to use 98.css is to import it from unpkg.
 
-### Window Components
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/98.css"
+>
+You can install 98.css from the GitHub releases page, or from npm.
 
-- All major features should be contained in draggable, resizable windows
-- Use proper window chrome (title bar, minimize/maximize/close buttons)
-- Implement a z-index system for proper window stacking
+npm install 98.css
+Components
+Button
+A command button, also referred to as a push button, is a control that causes the application to perform some action when the user clicks it.
+— Microsoft Windows User Experience p. 160
+A standard button measures 75px wide and 23px tall, with a raised outer and inner border. They are given 12px of horizontal padding by default.
 
-## Color Palette
+Click me  
+<button>Click me</button>
+<input type="submit" />
+<input type="reset" />
+You can add the class default to any button to apply additional styling, useful when communicating to the user what default action would happen in the active window if the Enter key was pressed on Windows 98.
 
-- **Primary Colors**:
+OK
+<button class="default">OK</button>
+When buttons are clicked, the raised borders become sunken. The following button is simulated to be in the pressed (active) state.
 
-  - Light Gray (`#c0c0c0`) for window backgrounds and main surfaces
-  - Dark Gray (`#808080`) for shadows and inactive elements
-  - Blue (`#000080`) for title bars and selection highlights
-  - White (`#ffffff`) for text fields and dialog backgrounds
-  - Black (`#000000`) for text and borders
+I am being pressed
+<button>I am being pressed</button>
+Disabled buttons maintain the same raised border, but have a "washed out" appearance in their label.
 
-- **Accent Colors** (use sparingly):
-  - Green (`#008000`) for success states
-  - Red (`#ff0000`) for errors and critical alerts
-  - Yellow (`#ffff00`) for warnings and notifications
+I cannot be clicked
+<button disabled>I cannot be clicked</button>
+Button focus is communicated with a dotted border, set 4px within the contents of the button. The following example is simulated to be focused.
 
-## Typography
+I am focused
+<button>I am focused</button>
+Checkbox
+A check box represents an independent or non-exclusive choice.
+— Microsoft Windows User Experience p. 167
+Checkboxes are represented with a sunken panel, populated with a "check" icon when selected, next to a label indicating the choice.
 
-- Use the provided `ms_sans_serif` font exclusively
-- Font sizes:
-  - 12px for standard text and buttons
-  - 11px for secondary information
-  - 14px for headers and emphasized elements
-- Minimal formatting - avoid italics, underlining except for links
+Note: You must include a corresponding label after your checkbox, using the <label> element with a for attribute pointed at the id of your input. This ensures the checkbox is easy to use with assistive technologies, on top of ensuring a good user experience for all (navigating with the tab key, being able to click the entire label to select the box).
 
-## Component Guidelines
+This is a checkbox
+<input type="checkbox" id="example1">
+<label for="example1">This is a checkbox</label>
+Checkboxes can be selected and disabled with the standard checked and disabled attributes.
 
-### Ticket List
+When grouping inputs, wrap each input in a container with the field-row class. This ensures a consistent spacing between inputs.
 
-- Display as a list view with columns (ID, Title, Status, Priority, Assigned To)
-- Allow sorting by clicking column headers (show sort direction with arrows)
-- Implement alternating row colors for better readability
-- Selection highlight in the Windows 95 blue
+I am checked
 
-### Ticket Detail View
+I am inactive
 
-- Open in a new window with proper title bar
-- Use tabs to organize different information sections
-- Form elements should use authentic Windows 95 styles
-- Include a status bar at the bottom showing last update time
+I am inactive but still checked
 
-### Forms
+<div class="field-row">
+  <input checked type="checkbox" id="example2">
+  <label for="example2">I am checked</label>
+</div>
+<div class="field-row">
+  <input disabled type="checkbox" id="example3">
+  <label for="example3">I am inactive</label>
+</div>
+<div class="field-row">
+  <input checked disabled type="checkbox" id="example4">
+  <label for="example4">I am inactive but still checked</label>
+</div>
+OptionButton
+An option button, also referred to as a radio button, represents a single choice within a limited set of mutually exclusive choices. That is, the user can choose only one set of options.
+— Microsoft Windows User Experience p. 164
+Option buttons can be used via the radio type on an input element.
 
-- Group related fields with `GroupBox` components
-- Use appropriate Windows 95 form controls:
-  - Text inputs with beveled insets
-  - Dropdown menus with the classic arrow button
-  - Radio buttons and checkboxes with square/round indicators
-  - Submit/Cancel buttons with proper button styling
+Option buttons can be grouped by specifying a shared name attribute on each input. Just as before: when grouping inputs, wrap each input in a container with the field-row class to ensure a consistent spacing between inputs.
 
-### Navigation
+Yes
 
-- Implement a menu bar with dropdown menus for all major functions
-- Include keyboard shortcuts and show them in the menus
-- Consider a toolbar with pixelated 16x16 icons for common actions
+No
 
-## Interactive Elements
+<div class="field-row">
+  <input id="radio5" type="radio" name="first-example">
+  <label for="radio5">Yes</label>
+</div>
+<div class="field-row">
+  <input id="radio6" type="radio" name="first-example">
+  <label for="radio6">No</label>
+</div>
+Option buttons can also be checked and disabled with their corresponding HTML attributes.
 
-### Buttons
+Peanut butter should be smooth
 
-- Use standard beveled button style with 1px border
-- Implement proper pressed state with inverted bevels
-- Show focus state with dotted outline
+I understand why people like crunchy peanut butter
 
-### Dialogs
+Crunchy peanut butter is good
 
-- Center on screen with proper Windows 95 window chrome
-- Include appropriate icon for dialog type (warning, error, info)
-- Use standard button layout (OK/Cancel, Yes/No) in the bottom right
+<div class="field-row">
+  <input id="radio7" type="radio" name="second-example">
+  <label for="radio7">Peanut butter should be smooth</label>
+</div>
+<div class="field-row">
+  <input checked disabled id="radio8" type="radio" name="second-example">
+  <label for="radio8">I understand why people like crunchy peanut butter</label>
+</div>
+<div class="field-row">
+  <input disabled id="radio9" type="radio" name="second-example">
+  <label for="radio9">Crunchy peanut butter is good</label>
+</div>
+GroupBox
+A group box is a special control you can use to organize a set of controls. A group box is a rectangular frame with an optional label that surrounds a set of controls.
+— Microsoft Windows User Experience p. 189
+A group box can be used by wrapping your elements with the fieldset tag. It contains a sunken outer border and a raised inner border, resembling an engraved box around your controls.
 
-### Loading States
+Select one:
 
-- Use the classic Windows 95 hourglass cursor for loading states
-- For longer operations, display a progress dialog with animated bar
+Diners
 
-## Responsive Considerations
+Drive-Ins
 
-- The Windows 95 UI wasn't designed for responsiveness, but:
+Dives
 
-  - Allow windows to be resized with minimum dimensions
-  - On smaller screens, consider a simplified view with fewer columns
-  - Keep the taskbar fixed at the bottom regardless of screen size
-
-  # npm
-
-  $ npm install react95 styled-components
-  Apply style reset, wrap your app with ThemeProvider with theme of your choice... and you are ready to go! 🚀
-
-import React from 'react';
-import { createGlobalStyle, ThemeProvider } from 'styled-components';
-
-import { MenuList, MenuListItem, Separator, styleReset } from 'react95';
-// pick a theme of your choice
-import original from 'react95/dist/themes/original';
-// original Windows95 font (optionally)
-import ms_sans_serif from 'react95/dist/fonts/ms_sans_serif.woff2';
-import ms_sans_serif_bold from 'react95/dist/fonts/ms_sans_serif_bold.woff2';
-
-const GlobalStyles = createGlobalStyle`  ${styleReset}
-  @font-face {
-    font-family: 'ms_sans_serif';
-    src: url('${ms_sans_serif}') format('woff2');
-    font-weight: 400;
-    font-style: normal
-  }
-  @font-face {
-    font-family: 'ms_sans_serif';
-    src: url('${ms_sans_serif_bold}') format('woff2');
-    font-weight: bold;
-    font-style: normal
-  }
-  body {
-    font-family: 'ms_sans_serif';
-  }`;
-
-const App = () => (
-
-  <div>
-    <GlobalStyles />
-    <ThemeProvider theme={original}>
-      <MenuList>
-        <MenuListItem>🎤 Sing</MenuListItem>
-        <MenuListItem>💃🏻 Dance</MenuListItem>
-        <Separator />
-        <MenuListItem disabled>😴 Sleep</MenuListItem>
-      </MenuList>
-    </ThemeProvider>
+<fieldset>
+  <div class="field-row">Select one:</div>
+  <div class="field-row">
+    <input id="radio10" type="radio" name="fieldset-example">
+    <label for="radio10">Diners</label>
   </div>
-);
+  <div class="field-row">
+    <input id="radio11" type="radio" name="fieldset-example">
+    <label for="radio11">Drive-Ins</label>
+  </div>
+  <div class="field-row">
+    <input id="radio12" type="radio" name="fieldset-example">
+    <label for="radio12">Dives</label>
+  </div>
+</fieldset>
+You can provide your group with a label by placing a legend element within the fieldset.
 
-export default App;
+Today's mood
 
-Tailwind 4.0 docs:
+Claire Saffitz
 
-Tailwind CSS v4.0 is an all-new version of the framework optimized for performance and flexibility, with a reimagined configuration and customization experience, and taking full advantage of the latest advancements the web platform has to offer.
+Brad Leone
 
-New high-performance engine — where full builds are up to 5x faster, and incremental builds are over 100x faster — and measured in microseconds.
-Designed for the modern web — built on cutting-edge CSS features like cascade layers, registered custom properties with @property, and color-mix().
-Simplified installation — fewer dependencies, zero configuration, and just a single line of code in your CSS file.
-First-party Vite plugin — tight integration for maximum performance and minimum configuration.
-Automatic content detection — all of your template files are discovered automatically, with no configuration required.
-Built-in import support — no additional tooling necessary to bundle multiple CSS files.
-CSS-first configuration — a reimagined developer experience where you customize and extend the framework directly in CSS instead of a JavaScript configuration file.
-CSS theme variables — all of your design tokens exposed as native CSS variables so you can access them anywhere.
-Dynamic utility values and variants — stop guessing what values exist in your spacing scale, or extending your configuration for things like basic data attributes.
-Modernized P3 color palette — a redesigned, more vivid color palette that takes full advantage of modern display technology.
-Container queries — first-class APIs for styling elements based on their container size, no plugins required.
-New 3D transform utilities — transform elements in 3D space directly in your HTML.
-Expanded gradient APIs — radial and conic gradients, interpolation modes, and more.
-@starting-style support — a new variant you can use to create enter and exit transitions, without the need for JavaScript.
-not-\* variant — style an element only when it doesn't match another variant, custom selector, or media or feature query.
-Even more new utilities and variants — including support for color-scheme, field-sizing, complex shadows, inert, and more.
-Start using Tailwind CSS v4.0 today by installing it in a new project, or playing with it directly in the browser on Tailwind Play.
+Chris Morocco
 
-For existing projects, we've published a comprehensive upgrade guide and built an automated upgrade tool to get you on the latest version as quickly and painlessly as possible.
+Carla Lalli Music
 
-New high-performance engine
-Tailwind CSS v4.0 is a ground-up rewrite of the framework, taking everything we've learned about the architecture over the years and optimizing it to be as fast as possible.
+<fieldset>
+  <legend>Today's mood</legend>
+  <div class="field-row">
+    <input id="radio13" type="radio" name="fieldset-example2">
+    <label for="radio13">Claire Saffitz</label>
+  </div>
+  <div class="field-row">
+    <input id="radio14" type="radio" name="fieldset-example2">
+    <label for="radio14">Brad Leone</label>
+  </div>
+  <div class="field-row">
+    <input id="radio15" type="radio" name="fieldset-example2">
+    <label for="radio15">Chris Morocco</label>
+  </div>
+  <div class="field-row">
+    <input id="radio16" type="radio" name="fieldset-example2">
+    <label for="radio16">Carla Lalli Music</label>
+  </div>
+</fieldset>
+TextBox
+A text box (also referred to as an edit control) is a rectangular control where the user enters or edits text. It can be defined to support a single line or multiple lines of text.
+— Microsoft Windows User Experience p. 181
+Text boxes can rendered by specifying a text type on an input element. As with checkboxes and radio buttons, you should provide a corresponding label with a properly set for attribute, and wrap both in a container with the field-row class.
 
-When benchmarking it on our own projects, we've found full rebuilds to be over 3.5x faster, and incremental builds to be over 8x faster.
+Occupation
 
-Here are the median build times we saw when we benchmarked Tailwind CSS v4.0 against Catalyst:
+<div class="field-row">
+  <label for="text17">Occupation</label>
+  <input id="text17" type="text" />
+</div>
+Additionally, you can make use of the field-row-stacked class to position your label above the input instead of beside it.
 
-v3.4 v4.0 Improvement
-Full build 378ms 100ms 3.78x
-Incremental rebuild with new CSS 44ms 5ms 8.8x
-Incremental rebuild with no new CSS 35ms 192µs 182x
-The most impressive improvement is on incremental builds that don't actually need to compile any new CSS — these builds are over 100x faster and complete in microseconds. And the longer you work on a project, the more of these builds you run into because you're just using classes you've already used before, like flex, col-span-2, or font-bold.
+Address (Line 1)
+Address (Line 2)
 
-Designed for the modern web
-The platform has evolved a lot since we released Tailwind CSS v3.0, and v4.0 takes full advantage of many of these improvements.
+<div class="field-row-stacked" style="width: 200px">
+  <label for="text18">Address (Line 1)</label>
+  <input id="text18" type="text" />
+</div>
+<div class="field-row-stacked" style="width: 200px">
+  <label for="text19">Address (Line 2)</label>
+  <input id="text19" type="text" />
+</div>
+To support multiple lines in the user's input, use the textarea element instead.
 
+Additional notes
+
+<div class="field-row-stacked" style="width: 200px">
+  <label for="text20">Additional notes</label>
+  <textarea id="text20" rows="8"></textarea>
+</div>
+Text boxes can also be disabled and have value with their corresponding HTML attributes.
+
+Favorite color
+Windows Green
+
+<div class="field-row">
+  <label for="text21">Favorite color</label>
+  <input id="text21" disabled type="text" value="Windows Green"/>
+</div>
+Slider
+A slider, sometimes called a trackbar control, consists of a bar that defines the extent or range of the adjustment and an indicator that shows the current value for the control...
+— Microsoft Windows User Experience p. 146
+Sliders can rendered by specifying a range type on an input element.
+
+Volume:
+Low
+
+High
+
+<div class="field-row" style="width: 300px">
+  <label for="range22">Volume:</label>
+  <label for="range23">Low</label>
+  <input id="range23" type="range" min="1" max="11" value="5" />
+  <label for="range24">High</label>
+</div>
+You can make use of the has-box-indicator class replace the default indicator with a box indicator, furthermore the slider can be wrapped with a div using is-vertical to display the input vertically.
+
+Note: To change the length of a vertical slider, the input width and div height.
+
+Cowbell
+
+<div class="field-row">
+  <label for="range25">Cowbell</label>
+  <div class="is-vertical">
+    <input id="range25" class="has-box-indicator" type="range" min="1" max="3" step="1" value="2" />
+  </div>
+</div>
+Dropdown
+A drop-down list box allows the selection of only a single item from a list. In its closed state, the control displays the current value for the control. The user opens the list to change the value.
+— Microsoft Windows User Experience p. 175
+Dropdowns can be rendered by using the select and option elements.
+
+5 - Incredible!
+<select>
+
+  <option>5 - Incredible!</option>
+  <option>4 - Great!</option>
+  <option>3 - Pretty good</option>
+  <option>2 - Not so great</option>
+  <option>1 - Unfortunate</option>
+</select>
+By default, the first option will be selected. You can change this by giving one of your option elements the selected attribute.
+
+3 - Pretty good
+<select>
+
+  <option>5 - Incredible!</option>
+  <option>4 - Great!</option>
+  <option selected>3 - Pretty good</option>
+  <option>2 - Not so great</option>
+  <option>1 - Unfortunate</option>
+</select>
+Window
+The following components illustrate how to build complete windows using 98.css.
+
+Title Bar
+At the top edge of the window, inside its border, is the title bar (also reffered to as the caption or caption bar), which extends across the width of the window. The title bar identifies the contents of the window.
+— Microsoft Windows User Experience p. 118
+Include command buttons associated with the common commands of the primary window in the title bar. These buttons act as shortcuts to specific window commands.
+— Microsoft Windows User Experience p. 122
+You can build a complete title bar by making use of three classes, title-bar, title-bar-text, and title-bar-controls.
+
+A Title Bar
+
+<div class="title-bar">
+  <div class="title-bar-text">A Title Bar</div>
+  <div class="title-bar-controls">
+    <button aria-label="Close"></button>
+  </div>
+</div>
+We make use of aria-label to render the Close button, to let assistive technologies know the intent of this button. You may also use "Minimize", "Maximize", "Restore" and "Help" like so:
+
+A Title Bar
+
+A Maximized Title Bar
+
+A Helpful Bar
+
+<div class="title-bar">
+  <div class="title-bar-text">A Title Bar</div>
+  <div class="title-bar-controls">
+    <button aria-label="Minimize"></button>
+    <button aria-label="Maximize"></button>
+    <button aria-label="Close"></button>
+  </div>
+</div>
+
+<br />
+
+<div class="title-bar">
+  <div class="title-bar-text">A Maximized Title Bar</div>
+  <div class="title-bar-controls">
+    <button aria-label="Minimize"></button>
+    <button aria-label="Restore"></button>
+    <button aria-label="Close"></button>
+  </div>
+</div>
+
+<br />
+
+<div class="title-bar">
+  <div class="title-bar-text">A Helpful Bar</div>
+  <div class="title-bar-controls">
+    <button aria-label="Help"></button>
+    <button aria-label="Close"></button>
+  </div>
+</div>
+Each aria-label also has a corresponding styling class to render the title bar buttons, to let the aria-label text be in other languages without causing rendering, accessibility, or localization issues.
+
+A Title Bar using Button Styling Classes
+
+A Maximized Title Bar using Button Styling Classes
+
+A Helpful Bar using Button Styling Classes
+
+<div class="title-bar">
+  <div class="title-bar-text">A Title Bar using Button Styling Classes</div>
+  <div class="title-bar-controls">
+    <button aria-label="Any Text" class="minimize"></button>
+    <button aria-label="Any Text" class="maximize"></button>
+    <button aria-label="Any Text" class="close"></button>
+  </div>
+</div>
+
+<br />
+
+<div class="title-bar">
+  <div class="title-bar-text">A Maximized Title Bar using Button Styling Classes</div>
+  <div class="title-bar-controls">
+    <button aria-label="Any Text" class="minimize"></button>
+    <button aria-label="Any Text" class="restore"></button>
+    <button aria-label="Any Text" class="close"></button>
+  </div>
+</div>
+
+<br />
+
+<div class="title-bar">
+  <div class="title-bar-text">A Helpful Bar using Button Styling Classes</div>
+  <div class="title-bar-controls">
+    <button aria-label="Any Text" class="help"></button>
+    <button aria-label="Any Text" class="close"></button>
+  </div>
+</div>
+Maximize buttons can be disabled, useful when making a window appear as if it cannot be maximized.
+
+A Title Bar with Maximize disabled
+
+<div class="title-bar">
+  <div class="title-bar-text">A Title Bar with Maximize disabled</div>
+  <div class="title-bar-controls">
+    <button aria-label="Minimize"></button>
+    <button aria-label="Maximize" disabled></button>
+    <button aria-label="Close"></button>
+  </div>
+</div>
+You can make a title bar "inactive" by adding inactive class, useful when making more than one window.
+
+An inactive title bar
+
+<div class="title-bar inactive">
+  <div class="title-bar-text">An inactive title bar</div>
+  <div class="title-bar-controls">
+    <button aria-label="Close"></button>
+  </div>
+</div>
+Window contents
+Every window has a boundary that defines its shape.
+— Microsoft Windows User Experience p. 118
+To give our title bar a home, we make use of the window class. This provides a raised outer and inner border, as well as some padding. We can freely resize the window by specifying a width in the container style.
+
+A Complete Window
+
+<div class="window" style="width: 300px">
+  <div class="title-bar">
+    <div class="title-bar-text">A Complete Window</div>
+    <div class="title-bar-controls">
+      <button aria-label="Minimize"></button>
+      <button aria-label="Maximize"></button>
+      <button aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+To draw the contents of the window, we use the window-body class under the title bar.
+
+A Window With Stuff In It
+
+There's so much room for activities!
+
+<div class="window" style="width: 300px">
+  <div class="title-bar">
+    <div class="title-bar-text">A Window With Stuff In It</div>
+    <div class="title-bar-controls">
+      <button aria-label="Minimize"></button>
+      <button aria-label="Maximize"></button>
+      <button aria-label="Close"></button>
+    </div>
+  </div>
+  <div class="window-body">
+    <p>There's so much room for activities!</p>
+  </div>
+</div>
+Status Bar
+A status bar is a special area within a window, typically the bottom, that displays information about the current state of what is being viewed in the window or any other contextual information, such as keyboard state.
+— Microsoft Windows User Experience p. 146
+You can render a status bar with the status-bar class, and status-bar-field for every child text element.
+
+A Window With A Status Bar
+There are just so many possibilities:
+
+A Task Manager
+A Notepad
+Or even a File Explorer!
+Press F1 for help
+
+Slide 1
+
+CPU Usage: 14%
+
+<div class="window" style="width: 320px">
+  <div class="title-bar">
+    <div class="title-bar-text">A Window With A Status Bar</div>
+  </div>
+  <div class="window-body">
+<p> There are just so many possibilities:</p>
+<ul>
+    <li>A Task Manager</li>
+    <li>A Notepad</li>
+    <li>Or even a File Explorer!</li>
+</ul>
+  </div>
+  <div class="status-bar">
+    <p class="status-bar-field">Press F1 for help</p>
+    <p class="status-bar-field">Slide 1</p>
+    <p class="status-bar-field">CPU Usage: 14%</p>
+  </div>
+</div>
+TreeView
+A tree view control is a special list box control that displays a set of objects as an indented outline based on their logical hierarchical relationship.
+— Microsoft Windows User Experience p. 178
+To render a tree view, use an ul element with the tree-view class. The children of this list (li elements), can contain whatever you'd like.
+
+We can put
+✨ Whatever ✨
+We want in here
+
+<ul class="tree-view">
+  <li>We can put</li>
+  <li><strong style="color: purple">✨ Whatever ✨</strong></li>
+  <li>We want in here</li>
+</ul>
+To make this a tree, we can nest further ul elements (no class needed on these). This will provide them with a nice dotted border and indentation to illustrate the structure of the tree.
+
+To create expandable sections, wrap child lists inside of details elements.
+
+Table of Contents
+What is web development?
 CSS
-@layer theme, base, components, utilities;
-@layer utilities {
-.mx-6 {
-margin-inline: calc(var(--spacing) \* 6);
-}
-.bg-blue-500\/50 {
-background-color: color-mix(in oklab, var(--color-blue-500) 50%, transparent);
-}
-}
-@property --tw-gradient-from {
-syntax: "<color>";
-inherits: false;
-initial-value: #0000;
-}
-We're leveraging modern CSS features like:
+Selectors
+Specificity
+Properties
+Avoid at all costs
+HTML
+Special Thanks
 
-Native cascade layers — giving us more control than ever over how different style rules interact with each other.
-Registered custom properties — making it possible to do things like animate gradients, and significantly improving performance on large pages.
-color-mix() — which lets us adjust the opacity of any color value, including CSS variables and currentColor.
-Logical properties — simplifying RTL support and reducing the size of your generated CSS.
-Many of these features have even simplified Tailwind internally, reducing the surface area for bugs and making the framework easier for us to maintain.
+<ul class="tree-view">
+  <li>Table of Contents</li>
+  <li>What is web development?</li>
+  <li>
+    CSS
+    <ul>
+      <li>Selectors</li>
+      <li>Specificity</li>
+      <li>Properties</li>
+    </ul>
+  </li>
+  <li>
+    <details open>
+      <summary>JavaScript</summary>
+      <ul>
+        <li>Avoid at all costs</li>
+        <li>
+          <details>
+            <summary>Unless</summary>
+            <ul>
+              <li>Avoid</li>
+              <li>
+                <details>
+                  <summary>At</summary>
+                  <ul>
+                    <li>Avoid</li>
+                    <li>At</li>
+                    <li>All</li>
+                    <li>Cost</li>
+                  </ul>
+                </details>
+              </li>
+              <li>All</li>
+              <li>Cost</li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </details>
+  </li>
+  <li>HTML</li>
+  <li>Special Thanks</li>
+</ul>
+Tabs
+A tab control is analogous to a divider in a file cabinet or notebook. You can use this control to define multiple logical pages or sections of information within the same window.
+— Microsoft Windows User Experience p. 193
+To render a tab list, use a menu element with the [role=tablist] attribute. The children of this menu (li elements), should get a [role=tab] attribute.
 
-Simplified installation
-We've streamlined the setup process a ton in v4.0, reducing the number of steps and removing a lot of boilerplate.
+Tabs should be managed by adding custom javascript code. All you need is to add the [aria-selected=true] attribute to the active tab.
 
-1. Install Tailwind CSS
-   npm i tailwindcss @tailwindcss/postcss;
-2. Add the PostCSS plugin
-   export default {
-   plugins: ["@tailwindcss/postcss"],
-   };
-3. Import Tailwind in your CSS
-   @import "tailwindcss";
-   With the improvements we've made to this process for v4.0, Tailwind feels more light-weight than ever:
+Hello, world!
 
-Just one-line of CSS — no more @tailwind directives, just add @import "tailwindcss" and start building.
-Zero configuration — you can start using the framework without configuring anything, not even the paths to your template files.
-No external plugins required — we bundle @import rules for you out of the box, and use Lightning CSS under the hood for vendor prefixing and modern syntax transforms.
-Sure you only go through this once per project, but it adds up when you're starting and abandoning a different side-project every weekend.
+Desktop
+My computer
+Control panel
+Devices manager
+Hardware profiles
+Performance
+the tab content
 
-First-party Vite plugin
-If you're a Vite user, you can now integrate Tailwind using @tailwindcss/vite instead of PostCSS:
+<div class="window-body">
+  <p>Hello, world!</p>
 
-vite.config.ts
-import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite";
-export default defineConfig({
-plugins: [
-tailwindcss(),
-],
+  <menu role="tablist">
+    <li role="tab" aria-selected="true"><a href="#tabs">Desktop</a></li>
+    <li role="tab"><a href="#tabs">My computer</a></li>
+    <li role="tab"><a href="#tabs">Control panel</a></li>
+    <li role="tab"><a href="#tabs">Devices manager</a></li>
+    <li role="tab"><a href="#tabs">Hardware profiles</a></li>
+    <li role="tab"><a href="#tabs">Performance</a></li>
+  </menu>
+  <div class="window" role="tabpanel">
+    <div class="window-body">
+      <p>the tab content</p>
+    </div>
+  </div>
+</div>
+To create multirows tabs, add a multirows class to the menu tag.
+
+Hello, world!
+
+Desktop
+My computer
+Control panel
+Devices manager
+Hardware profiles
+Performance
+Users
+Network
+Programs
+Services
+Resources
+Advanced
+the tab content
+
+<div class="window-body">
+  <p>Hello, world!</p>
+
+  <menu role="tablist" class="multirows">
+    <li role="tab"><a href="#tabs">Desktop</a></li>
+    <li role="tab"><a href="#tabs">My computer</a></li>
+    <li role="tab"><a href="#tabs">Control panel</a></li>
+    <li role="tab"><a href="#tabs">Devices manager</a></li>
+    <li role="tab"><a href="#tabs">Hardware profiles</a></li>
+    <li role="tab"><a href="#tabs">Performance</a></li>
+  </menu>
+  <menu role="tablist" class="multirows">
+    <li role="tab"><a href="#tabs">Users</a></li>
+    <li role="tab"><a href="#tabs">Network</a></li>
+    <li role="tab"><a href="#tabs">Programs</a></li>
+    <li role="tab"><a href="#tabs">Services</a></li>
+    <li role="tab"><a href="#tabs">Resources</a></li>
+    <li role="tab"><a href="#tabs">Advanced</a></li>
+  </menu>
+  <div class="window" role="tabpanel">
+    <div class="window-body">
+      <p>the tab content</p>
+    </div>
+  </div>
+</div>
+TableView
+To render a table view, use a table element. Wrap it with a div element with sunken-panel class to provide proper border and overflow container.
+
+With a bit of extra scripting you can make table view interactive. Give interactive class to table element to show pointer cursor when hovering over body rows. Table rows can be given highlighted class to appear selected.
+
+Name Version Company
+MySQL ODBC 3.51 Driver 3.51.11.00 MySQL AB
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+SQL Server 3.70.06.23 Microsoft Corporation
+
+<div class="sunken-panel" style="height: 120px; width: 240px;">
+  <table class="interactive">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Version</th>
+        <th>Company</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>MySQL ODBC 3.51 Driver</td>
+        <td>3.51.11.00</td>
+        <td>MySQL AB</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+      <tr>
+        <td>SQL Server</td>
+        <td>3.70.06.23</td>
+        <td>Microsoft Corporation</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<script>
+  document.querySelectorAll('table.interactive').forEach(element => {
+    element.addEventListener('click', (event) => {
+      const highlightedClass = 'highlighted';
+      const isRow = element => element.tagName === 'TR' && element.parentElement.tagName === 'TBODY';
+      const newlySelectedRow = event.composedPath().find(isRow);
+      const previouslySelectedRow = Array.from(newlySelectedRow.parentElement.children).filter(isRow).find(element => element.classList.contains(highlightedClass));
+      if(previouslySelectedRow){
+        previouslySelectedRow.classList.toggle(highlightedClass);
+      }
+
+      if (newlySelectedRow) {
+        newlySelectedRow.classList.toggle(highlightedClass);
+      }
+    })
+
 });
-Tailwind CSS v4.0 is incredibly fast when used as a PostCSS plugin, but you'll get even better performance using the Vite plugin.
+</script>
+Progress Indicator
+You can use a progress indicator, also known as a progress bar control, to show the percentage of completion of a lengthy operation.
+— Microsoft Windows User Experience p. 189
+There are two types of progress bars: solid and segmented. The solid version is the default. To declare a segmented bar, you should use the segmented class.
 
-Automatic content detection
-You know how you always had to configure that annoying content array in Tailwind CSS v3? In v4.0, we came up with a bunch of heuristics for detecting all of that stuff automatically so you don’t have to configure it at all.
-
-For example, we automatically ignore anything in your .gitignore file to avoid scanning dependencies or generated files that aren’t under version control:
-
-.gitignore
-/node_modules
-/coverage
-/.next/
-/build
-We also automatically ignore all binary extensions like images, videos, .zip files, and more.
-
-And if you ever need to explicitly add a source that's excluded by default, you can always add it with the @source directive, right in your CSS file:
-
-CSS
-@import "tailwindcss";
-@source "../node_modules/@my-company/ui-lib";
-The @source directive uses the same heuristics under the hood, so it will exclude binary file types for example as well, without you having to specify all of the extensions to scan explicitly.
-
-Learn more about in our new documentation on detecting classes in source files.
-
-Built-in import support
-Before v4.0, if you wanted to inline other CSS files using @import you'd have to configure another plugin like postcss-import to handle it for you.
-
-Now we handle this out of the box, so you don't need any other tools:
-
-postcss.config.js
-export default {
-plugins: [
-"postcss-import",
-"@tailwindcss/postcss",
-],
-};
-Our import system is purpose-built for Tailwind CSS, so we've also been able to make it even faster by tightly integrating it with our engine.
-
-CSS-first configuration
-One of the biggest changes in Tailwind CSS v4.0 is the shift from configuring your project in JavaScript to configuring it in CSS.
-
-Instead of a tailwind.config.js file, you can configure all of your customizations directly in the CSS file where you import Tailwind, giving you one less file to worry about in your project:
-
-CSS
-@import "tailwindcss";
-@theme {
---font-display: "Satoshi", "sans-serif";
---breakpoint-3xl: 1920px;
---color-avocado-100: oklch(0.99 0 0);
---color-avocado-200: oklch(0.98 0.04 113.22);
---color-avocado-300: oklch(0.94 0.11 115.03);
---color-avocado-400: oklch(0.92 0.19 114.08);
---color-avocado-500: oklch(0.84 0.18 117.33);
---color-avocado-600: oklch(0.53 0.12 118.34);
---ease-fluid: cubic-bezier(0.3, 0, 0, 1);
---ease-snappy: cubic-bezier(0.2, 0, 0, 1);
-/_ ... _/
-}
-The new CSS-first configuration lets you do just about everything you could do in your tailwind.config.js file, including configuring your design tokens, defining custom utilities and variants, and more.
-
-To learn more about how it all works, read the new theme variables documentation.
-
-CSS theme variables
-Tailwind CSS v4.0 takes all of your design tokens and makes them available as CSS variables by default, so you can reference any value you need at run-time using just CSS.
-
-Using the example @theme from earlier, all of these values will be added to your CSS to as regular custom properties:
-
-Generated CSS
-:root {
---font-display: "Satoshi", "sans-serif";
---breakpoint-3xl: 1920px;
---color-avocado-100: oklch(0.99 0 0);
---color-avocado-200: oklch(0.98 0.04 113.22);
---color-avocado-300: oklch(0.94 0.11 115.03);
---color-avocado-400: oklch(0.92 0.19 114.08);
---color-avocado-500: oklch(0.84 0.18 117.33);
---color-avocado-600: oklch(0.53 0.12 118.34);
---ease-fluid: cubic-bezier(0.3, 0, 0, 1);
---ease-snappy: cubic-bezier(0.2, 0, 0, 1);
-/_ ... _/
-}
-This makes it easy to reuse these values as inline styles or pass them to libraries like Motion to animate them.
-
-Dynamic utility values and variants
-We've simplified the way many utilities and variants work in v4.0 by effectively allowing them to accept certain types of arbitrary values, without the need for any configuration or dropping down to the arbitrary value syntax.
-
-For example, in Tailwind CSS v4.0 you can create grids of any size out of the box:
-
-HTML
-
-<div class="grid grid-cols-15">
-  <!-- ... -->
+<div class="progress-indicator">
+  <span class="progress-indicator-bar"  style="width: 40%;" />
 </div>
-You can also target custom boolean data attributes without needing to define them:
-
-HTML
-
-<div data-current class="opacity-75 data-current:opacity-100">
-  <!-- ... -->
+<div class="progress-indicator segmented">
+  <span class="progress-indicator-bar" style="width: 40%;" />
 </div>
-Even spacing utilities like px-*, mt-*, w-*, h-*, and more are now dynamically derived from a single spacing scale variable and accept any value out of the box:
+Issues, Contributing, etc.
+98.css is MIT licensed.
 
-Generated CSS
-@layer theme {
-:root {
---spacing: 0.25rem;
-}
-}
-@layer utilities {
-.mt-8 {
-margin-top: calc(var(--spacing) _ 8);
-}
-.w-17 {
-width: calc(var(--spacing) _ 17);
-}
-.pr-29 {
-padding-right: calc(var(--spacing) \* 29);
-}
-}
-The upgrade tool we released alongside v4.0 will even simplify most of these utilities for you automatically if it notices you using an arbitrary value that's no longer needed.
+Refer to the GitHub issues page to see bugs in my CSS or report new ones. I'd really like to see your pull requests (especially those new to open-source!) and will happily provide code review. 98.css is a fun, silly project and I'd like to make it a fun place to build your open-source muscle.
 
-Modernized P3 color palette
-We've upgraded the entire default color palette from rgb to oklch, taking advantage of the wider gamut to make the colors more vivid in places where we were previously limited by the sRGB color space.
-
-We've tried to keep the balance between all the colors the same as it was in v3, so even though we've refreshed things across the board, it shouldn't feel like a breaking change when upgrading your existing projects.
-
-Container queries
-We've brought container query support into core for v4.0, so you don't need the @tailwindcss/container-queries plugin anymore:
-
-HTML
-
-<div class="@container">
-  <div class="grid grid-cols-1 @sm:grid-cols-3 @lg:grid-cols-4">
-    <!-- ... -->
-  </div>
-</div>
-We've also added support for max-width container queries using the new @max-* variant:
-
-HTML
-
-<div class="@container">
-  <div class="grid grid-cols-3 @max-md:grid-cols-1">
-    <!-- ... -->
-  </div>
-</div>
-Like our regular breakpoint variants, you can also stack @min-* and @max-* variants to define container query ranges:
-
-HTML
-
-<div class="@container">
-  <div class="flex @min-md:@max-xl:hidden">
-    <!-- ... -->
-  </div>
-</div>
-Learn more in our all-new container queries documentation.
-
-New 3D transform utilities
-We've finally added APIs for doing 3D transforms, like rotate-x-_, rotate-y-_, scale-z-_, translate-z-_, and tons more.
-
-Mar 16, 2020
-Michael Foster
-Boost your conversion rate
-
-<div class="perspective-distant">
-  <article class="rotate-x-51 rotate-z-43 transform-3d ...">
-    <!-- ... -->
-  </article>
-</div>
-Check out the updated transform-style, rotate, perspective, and perspective-origin documentation to get started.
-
-Expanded gradient APIs
-We've added a ton of new gradient features in v4.0, so you can pull off even fancier effects without having to write any custom CSS.
-
-Linear gradient angles
-Linear gradients now support angles as values, so you can use utilities like bg-linear-45 to create a gradient on a 45 degree angle:
-
-<div class="bg-linear-45 from-indigo-500 via-purple-500 to-pink-500"></div>
-You may notice we've renamed bg-gradient-* to bg-linear-* too — you'll see why shortly!
-
-Gradient interpolation modifiers
-We've added the ability to control the color interpolation mode for gradients using a modifier, so a class like bg-linear-to-r/srgb interpolates using sRGB, and bg-linear-to-r/oklch interpolates using OKLCH:
-
-<div class="bg-linear-to-r/srgb from-indigo-500 to-teal-400">...</div>
-<div class="bg-linear-to-r/oklch from-indigo-500 to-teal-400">...</div>
-Using polar color spaces like OKLCH or HSL can lead to much more vivid gradients when the from-* and to-* colors are far apart on the color wheel. We're using OKLAB by default in v4.0 but you can always interpolate using a different color space by adding one of these modifiers.
-
-Conic and radial gradients
-We've added new bg-conic-_ and bg-radial-_ utilities for creating conic and radial gradients:
-
-<div class="size-24 rounded-full bg-conic/[in_hsl_longer_hue] from-red-600 to-red-600"></div>
-<div class="size-24 rounded-full bg-radial-[at_25%_25%] from-white to-zinc-900 to-75%"></div>
-These new utilities work alongside the existing from-*, via-*, and to-* utilities to let you create conic and radial gradients the same way you create linear gradients, and include modifiers for setting the color interpolation method and arbitrary value support for controlling details like the gradient position.
-
-@starting-style support
-The new starting variant adds support for the new CSS @starting-style feature, making it possible to transition element properties when an element is first displayed:
-
-<div>
-  <button popovertarget="my-popover">Check for updates</button>
-  <div popover id="my-popover" class="transition-discrete starting:open:opacity-0 ...">
-    <!-- ... -->
-  </div>
-</div>
-With @starting-style, you can finally animate elements as they appear on the page without the need for any JavaScript at all. Browser support probably isn't quite there yet for most teams, but we're getting close!
-
-not-_ variant
-We've added a new not-_ variant which finally adds support for the CSS :not() pseudo-class:
-
-HTML
-
-<div class="not-hover:opacity-75">
-  <!-- ... -->
-</div>
-CSS
-.not-hover\:opacity-75:not(*:hover) {
-  opacity: 75%;
-}
-@media not (hover: hover) {
-  .not-hover\:opacity-75 {
-    opacity: 75%;
-  }
-}
-It does double duty and also lets you negate media queries and @supports queries:
-
-HTML
-
-<div class="not-supports-hanging-punctuation:px-4">
-  <!-- ... -->
-</div>
-CSS
-.not-supports-hanging-punctuation\:px-4 {
-  @supports not (hanging-punctuation: var(--tw)) {
-    padding-inline: calc(var(--spacing) * 4);
-  }
-}
-Check out the new not-* documentation to learn more.
-
-Even more new utilities and variants
-We've added a ton of other new utilities and variants to v4.0 too, including:
-
-New inset-shadow-_ and inset-ring-_ utilities — making it possible to stack up to four layers of box shadows on a single element.
-New field-sizing utilities — for auto-resizing textareas without writing a single line of JavaScript.
-New color-scheme utilities — so you can finally get rid of those ugly light scrollbars in dark mode.
-New font-stretch utilities — for carefully tweaking variable fonts that support different widths.
-New inert variant — for styling non-interactive elements marked with the inert attribute.
-New nth-_ variants — for doing really clever things you'll eventually regret.
-New in-_ variant — which is a lot like group-\*, but without the need for the group class.
-Support for :popover-open — using the existing open variant to also target open popovers.
-New descendant variant — for styling all descendant elements, for better or for worse.
-Check out the relevant documentation for all of these features to learn more.
-
-And that's it — that's Tailwind CSS v4.0. It's been years of work to get to this point, but we're all extremely proud of this release and we can't wait to see what you build with it.
-
-Check it out, play with it, maybe even break it, and definitely let us know what you think.
-
-Just no bug reports until tomorrow please — let us at least enjoy one celebratory team dinner and maybe relax in the hot tub at this hotel for a bit believing that somehow we really did ship flawless software.
+Thank you for checking my little project out, I hope it brought you some joy today. Consider starring/following along on GitHub and maybe subscribing to more fun things on my twitter. 👋

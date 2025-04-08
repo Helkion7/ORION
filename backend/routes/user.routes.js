@@ -7,6 +7,7 @@ const {
   getUser,
   updateUser,
   deleteUser,
+  promoteUser,
 } = require("../controllers/user.controller");
 
 // Import middleware
@@ -27,5 +28,8 @@ router
   .get(getUser)
   .put(validateUpdateUser, updateUser)
   .delete(deleteUser);
+
+// Route for promoting a user to admin
+router.route("/promote").put(promoteUser);
 
 module.exports = router;

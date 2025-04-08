@@ -182,6 +182,84 @@ body {
   min-height: 200px;
 }
 
+/* Add this to your existing CSS */
+@keyframes windows98FadeIn {
+  from {
+    filter: brightness(150%);
+  }
+  to {
+    filter: brightness(100%);
+  }
+}
+
+.response-new {
+  animation: windows98FadeIn 2s ease-out;
+  border-left-width: 6px !important;
+}
+
+/* Loading indicator styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  width: 100%;
+}
+
+.loading-spinner {
+  margin-bottom: 10px;
+}
+
+.loading-icon {
+  width: 32px;
+  height: 32px;
+  animation: spin 1.5s infinite linear;
+}
+
+.loading-message {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Progress indicator animations */
+@keyframes indeterminate-progress {
+  0% {
+    width: 25%;
+    left: -25%;
+  }
+  50% {
+    width: 50%;
+  }
+  100% {
+    width: 25%;
+    left: 100%;
+  }
+}
+
+/* API Progress indicator */
+.api-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+}
+
+.api-progress .progress-indicator {
+  height: 3px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   body {

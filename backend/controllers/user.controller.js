@@ -124,3 +124,45 @@ exports.deleteUser = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Promote a user to admin
+// @route   PUT /api/users/promote
+// @access  Private/Admin
+exports.promoteUser = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Please provide an email address",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found with that email address",
+      });
+    }
+
+    if (user.role === "admin") {
+      return res.status(400).json({
+        success: false,
+        error: "User is already an admin",
+      });
+    }
+
+    user.role = "admin";
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

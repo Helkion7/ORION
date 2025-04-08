@@ -18,6 +18,18 @@ exports.createTicket = async (req, res, next) => {
     // Create the ticket
     const ticket = await Ticket.create(req.body);
 
+    // Get the fully populated ticket to emit
+    const populatedTicket = await Ticket.findById(ticket._id).populate([
+      { path: "user", select: "name email" },
+      { path: "assignedTo", select: "name email" },
+    ]);
+
+    // Emit socket event for new ticket
+    const io = req.app.get("io");
+    io.emit("newTicket", {
+      ticket: populatedTicket,
+    });
+
     res.status(201).json({
       success: true,
       data: ticket,
@@ -212,6 +224,20 @@ exports.updateTicket = async (req, res, next) => {
       });
     }
 
+    // Validate assignedTo if present
+    if (req.body.assignedTo && req.body.assignedTo !== "") {
+      // Fetch the user to check their role
+      const User = require("../models/User");
+      const assignedUser = await User.findById(req.body.assignedTo);
+
+      if (!assignedUser || assignedUser.role !== "admin") {
+        return res.status(400).json({
+          success: false,
+          error: "Tickets can only be assigned to admin users",
+        });
+      }
+    }
+
     // Regular users can only update certain fields if they own the ticket
     if (req.user.role !== "admin") {
       // Only allow users to update title, description, and category
@@ -249,6 +275,12 @@ exports.updateTicket = async (req, res, next) => {
         select: "name email role",
       },
     ]);
+
+    // Emit socket event for updated ticket
+    const io = req.app.get("io");
+    io.emit("updateTicket", {
+      ticket,
+    });
 
     res.status(200).json({
       success: true,
@@ -374,6 +406,12 @@ exports.addResponse = async (req, res, next) => {
         select: "name email role",
       },
     ]);
+
+    // Emit socket event for ticket response
+    const io = req.app.get("io");
+    io.emit("ticketResponse", {
+      ticket: updatedTicket,
+    });
 
     res.status(200).json({
       success: true,

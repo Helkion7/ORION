@@ -21,7 +21,9 @@ exports.validateRegister = [
     .withMessage("Password is required")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters")
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/
+    )
     .withMessage(
       "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
     ),
@@ -97,34 +99,48 @@ exports.validateUpdateTicket = [
   body("title")
     .optional()
     .trim()
-    .isLength({ max: 100 })
-    .withMessage("Title cannot be more than 100 characters"),
+    .isLength({ min: 3, max: 100 })
+    .withMessage("Title must be between 3 and 100 characters"),
 
   body("description")
     .optional()
     .trim()
-    .isLength({ max: 2000 })
-    .withMessage("Description cannot be more than 2000 characters"),
+    .isLength({ min: 10, max: 2000 })
+    .withMessage("Description must be between 10 and 2000 characters"),
 
   body("category")
     .optional()
     .isIn(["Hardware", "Software", "Network", "Security", "Account", "Other"])
-    .withMessage("Invalid category selected"),
+    .withMessage("Please select a valid category"),
 
   body("status")
     .optional()
     .isIn(["open", "in progress", "solved"])
-    .withMessage("Invalid status selected"),
+    .withMessage("Please select a valid status"),
 
   body("priority")
     .optional()
     .isIn(["low", "medium", "high", "urgent"])
-    .withMessage("Invalid priority selected"),
+    .withMessage("Please select a valid priority"),
 
   body("assignedTo")
     .optional()
-    .isMongoId()
-    .withMessage("Invalid user ID format for assignment"),
+    .custom(async (value, { req }) => {
+      if (value === "") return true;
+
+      const User = require("../models/User");
+      const user = await User.findById(value);
+
+      if (!user) {
+        throw new Error("Assigned user not found");
+      }
+
+      if (user.role !== "admin") {
+        throw new Error("Tickets can only be assigned to admin users");
+      }
+
+      return true;
+    }),
 ];
 
 // Validation middleware for adding responses to tickets

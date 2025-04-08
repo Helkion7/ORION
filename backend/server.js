@@ -5,12 +5,48 @@ const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const http = require("http");
+const { Server } = require("socket.io");
 
 // Load environment variables
 dotenv.config();
 
 // Initialize express app
 const app = express();
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+  },
+  // Make sure Socket.IO path is properly set
+  path: "/socket.io/",
+});
+
+// Socket.IO connection handling
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  // Handle user connection with metadata
+  socket.on("userConnected", (userData) => {
+    console.log(`User ${userData.userId} (${userData.role}) connected`);
+    // You can store user information in socket for later use
+    socket.userData = userData;
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+// Make io accessible to other modules
+app.set("io", io);
 
 // Security middleware
 app.use(
@@ -22,10 +58,7 @@ app.use(
 // Configure CORS properly for cookies to work
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://yourproductiondomain.com"
-        : "http://localhost:3000",
+    origin: process.env.CORS_ORIGIN,
     credentials: true, // Allow cookies to be sent with requests
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -52,12 +85,12 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 // Import routes
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
-const ticketRoutes = require("./routes/ticket.routes"); // Add ticket routes
+const ticketRoutes = require("./routes/ticket.routes");
 
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/tickets", ticketRoutes); // Mount ticket routes
+app.use("/api/tickets", ticketRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -79,12 +112,13 @@ mongoose
   .then(() => {
     console.log("Connected to MongoDB");
 
-    // Start server
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    // Start server (changed from app.listen to server.listen)
+    const PORT = process.env.PORT || 4000; // Make sure this matches your .env PORT
+    server.listen(PORT, () => {
       console.log(
         `Server running on port ${PORT} in ${process.env.NODE_ENV} mode`
       );
+      console.log(`Socket.IO server running on same port`);
     });
   })
   .catch((err) => {

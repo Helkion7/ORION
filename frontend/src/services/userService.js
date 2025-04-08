@@ -24,3 +24,8 @@ export const updateProfile = async (userData) => {
   const response = await api.put("/auth/profile", userData);
   return response.data;
 };
+
+export const promoteUser = async (email) => {
+  const response = await api.put("/users/promote", { email });
+  return response.data;
+};

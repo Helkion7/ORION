@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createTicket } from "../services/ticketService";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 const CreateTicket = () => {
   const [formData, setFormData] = useState({
@@ -135,7 +136,24 @@ const CreateTicket = () => {
               Cancel
             </button>
             <button type="submit" disabled={submitting} className="default">
-              {submitting ? "Creating..." : "Create Ticket"}
+              {submitting ? (
+                <span
+                  style={{ display: "flex", alignItems: "center", gap: "5px" }}
+                >
+                  Creating Ticket...
+                  <div
+                    className="progress-indicator"
+                    style={{ width: "50px", display: "inline-block" }}
+                  >
+                    <span
+                      className="progress-indicator-bar"
+                      style={{ width: "60%" }}
+                    />
+                  </div>
+                </span>
+              ) : (
+                "Create Ticket"
+              )}
             </button>
           </div>
         </form>

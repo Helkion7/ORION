@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getTicketStats, getTickets } from "../services/ticketService";
+import { useSocket } from "../contexts/SocketContext";
+import LoadingIndicator from "../components/LoadingIndicator";
+import PromoteUserForm from "../components/PromoteUserForm";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [recentTickets, setRecentTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+  const socket = useSocket();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,12 +25,12 @@ const AdminDashboard = () => {
 
         // Fetch recent tickets
         const ticketsResult = await getTickets({
-          limit: 5,
+          limit: 10,
           sort: "-createdAt",
         });
         setRecentTickets(ticketsResult.data);
       } catch (err) {
-        setError("Failed to load dashboard data");
+        setError("Failed to fetch dashboard data");
         console.error(err);
       } finally {
         setLoading(false);
@@ -33,6 +39,76 @@ const AdminDashboard = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new tickets
+    const handleNewTicket = (data) => {
+      setRecentTickets((prevTickets) => {
+        // Check if the ticket already exists
+        const exists = prevTickets.some((t) => t._id === data.ticket._id);
+        if (!exists) {
+          // Add new ticket at the beginning and maintain the limit
+          return [data.ticket, ...prevTickets.slice(0, 9)];
+        }
+        return prevTickets;
+      });
+
+      // Update stats counts
+      setStats((prevStats) => {
+        if (!prevStats) return prevStats;
+
+        // Deep clone the stats object to avoid direct mutation
+        const newStats = JSON.parse(JSON.stringify(prevStats));
+
+        // Update status stats count
+        const statusIndex = newStats.statusStats.findIndex(
+          (s) => s._id === data.ticket.status
+        );
+        if (statusIndex >= 0) {
+          newStats.statusStats[statusIndex].count += 1;
+        }
+
+        // Update category stats count
+        const categoryIndex = newStats.categoryStats.findIndex(
+          (c) => c._id === data.ticket.category
+        );
+        if (categoryIndex >= 0) {
+          newStats.categoryStats[categoryIndex].count += 1;
+        }
+
+        // Update priority stats count
+        const priorityIndex = newStats.priorityStats.findIndex(
+          (p) => p._id === data.ticket.priority
+        );
+        if (priorityIndex >= 0) {
+          newStats.priorityStats[priorityIndex].count += 1;
+        }
+
+        return newStats;
+      });
+    };
+
+    // Listen for ticket updates
+    const handleUpdateTicket = (data) => {
+      setRecentTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket._id === data.ticket._id ? data.ticket : ticket
+        )
+      );
+    };
+
+    socket.on("newTicket", handleNewTicket);
+    socket.on("updateTicket", handleUpdateTicket);
+    socket.on("ticketResponse", handleUpdateTicket);
+
+    return () => {
+      socket.off("newTicket", handleNewTicket);
+      socket.off("updateTicket", handleUpdateTicket);
+      socket.off("ticketResponse", handleUpdateTicket);
+    };
+  }, [socket]);
 
   const formatStatusStats = (statusStats) => {
     if (!statusStats) return [];
@@ -73,7 +149,10 @@ const AdminDashboard = () => {
           <div className="title-bar-text">Admin Dashboard</div>
         </div>
         <div className="window-body">
-          <div className="loading-overlay">Loading dashboard data...</div>
+          <LoadingIndicator
+            message="Loading dashboard data..."
+            showSpinner={true}
+          />
         </div>
       </div>
     );
@@ -100,6 +179,9 @@ const AdminDashboard = () => {
       </div>
       <div className="window-body">
         <h2>Admin Control Panel</h2>
+
+        {/* User Management Section */}
+        <PromoteUserForm />
 
         <div className="dashboard-grid">
           {/* Quick Actions */}

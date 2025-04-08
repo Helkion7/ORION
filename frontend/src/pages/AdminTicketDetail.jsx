@@ -7,11 +7,14 @@ import {
 } from "../services/ticketService";
 import { getUsers } from "../services/userService";
 import { useAuth } from "../contexts/AuthContext";
+import { useSocket } from "../contexts/SocketContext";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 const AdminTicketDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const socket = useSocket();
 
   const [ticket, setTicket] = useState(null);
   const [users, setUsers] = useState([]);
@@ -32,6 +35,29 @@ const AdminTicketDetail = () => {
     fetchTicket();
     fetchUsers();
   }, [id]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTicketResponse = (data) => {
+      if (data.ticket && data.ticket._id === id) {
+        setTicket(data.ticket);
+        setTicketUpdate({
+          status: data.ticket.status,
+          priority: data.ticket.priority,
+          assignedTo: data.ticket.assignedTo?._id || "",
+        });
+      }
+    };
+
+    socket.on("updateTicket", handleTicketResponse);
+    socket.on("ticketResponse", handleTicketResponse);
+
+    return () => {
+      socket.off("updateTicket", handleTicketResponse);
+      socket.off("ticketResponse", handleTicketResponse);
+    };
+  }, [socket, id]);
 
   const fetchTicket = async () => {
     try {
@@ -90,10 +116,10 @@ const AdminTicketDetail = () => {
       await addResponse(id, { text: response, isInternal });
       setResponse("");
       setIsInternal(false);
-      await fetchTicket();
     } catch (err) {
       setError("Failed to submit response");
       console.error(err);
+      await fetchTicket();
     } finally {
       setSubmitting(false);
     }
@@ -114,7 +140,10 @@ const AdminTicketDetail = () => {
           <div className="title-bar-text">Loading Ticket...</div>
         </div>
         <div className="window-body">
-          <div className="loading-overlay">Loading ticket details...</div>
+          <LoadingIndicator
+            message="Loading ticket details..."
+            showSpinner={true}
+          />
         </div>
       </div>
     );
@@ -251,7 +280,7 @@ const AdminTicketDetail = () => {
                   </div>
 
                   <div className="field-row-stacked">
-                    <label htmlFor="assignedTo">Assign To</label>
+                    <label htmlFor="assignedTo">Assign To (Admin only)</label>
                     <select
                       id="assignedTo"
                       name="assignedTo"
@@ -350,7 +379,28 @@ const AdminTicketDetail = () => {
               </div>
               <div className="button-row">
                 <button type="submit" disabled={submitting || !response.trim()}>
-                  {submitting ? "Submitting..." : "Submit Response"}
+                  {submitting ? (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      Submitting...
+                      <div
+                        className="progress-indicator"
+                        style={{ width: "50px", display: "inline-block" }}
+                      >
+                        <span
+                          className="progress-indicator-bar"
+                          style={{ width: "80%" }}
+                        />
+                      </div>
+                    </span>
+                  ) : (
+                    "Submit Response"
+                  )}
                 </button>
               </div>
             </form>

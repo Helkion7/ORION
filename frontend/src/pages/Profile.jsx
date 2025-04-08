@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -232,6 +233,16 @@ const Profile = () => {
             )}
           </div>
         </div>
+
+        {loading && (
+          <div className="loading-overlay">
+            <LoadingIndicator
+              message="Updating profile..."
+              value={60}
+              indeterminate={false}
+            />
+          </div>
+        )}
 
         <div className="window" style={{ width: "100%" }}>
           <div className="title-bar">

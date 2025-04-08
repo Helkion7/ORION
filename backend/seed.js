@@ -16,7 +16,7 @@ const seedDB = async () => {
       await User.create({
         name: "Admin User",
         email: "admin@example.com",
-        password: "Admin123!",
+        password: process.env.SEED_ADMIN_PASSWORD,
         role: "admin",
       });
       console.log("Admin user created");
@@ -30,7 +30,7 @@ const seedDB = async () => {
       await User.create({
         name: "Regular User",
         email: "user@example.com",
-        password: "User123!",
+        password: process.env.SEED_USER_PASSWORD,
         role: "user",
       });
       console.log("Regular user created");

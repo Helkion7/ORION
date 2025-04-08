@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getTickets } from "../services/ticketService";
+import { useSocket } from "../contexts/SocketContext";
+import { useAuth } from "../contexts/AuthContext";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -11,10 +14,66 @@ const Tickets = () => {
   const [filter, setFilter] = useState("all"); // all, open, in progress, solved
 
   const navigate = useNavigate();
+  const socket = useSocket();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchTickets();
   }, [page, filter]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new tickets
+    const handleNewTicket = (data) => {
+      // Only add the ticket if it belongs to the current user
+      if (data.ticket.user && data.ticket.user._id === user.id) {
+        setTickets((prevTickets) => {
+          // If we're on the first page, add the ticket to the list
+          if (page === 1) {
+            // Check if the ticket already exists
+            const exists = prevTickets.some((t) => t._id === data.ticket._id);
+            if (!exists) {
+              // Apply filter
+              if (filter === "all" || data.ticket.status === filter) {
+                // Add new ticket to the beginning
+                return [data.ticket, ...prevTickets.slice(0, -1)];
+              }
+            }
+          }
+          return prevTickets;
+        });
+      }
+    };
+
+    // Listen for ticket updates
+    const handleUpdateTicket = (data) => {
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket._id === data.ticket._id ? data.ticket : ticket
+        )
+      );
+    };
+
+    // Listen for ticket responses
+    const handleTicketResponse = (data) => {
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket._id === data.ticket._id ? data.ticket : ticket
+        )
+      );
+    };
+
+    socket.on("newTicket", handleNewTicket);
+    socket.on("updateTicket", handleUpdateTicket);
+    socket.on("ticketResponse", handleTicketResponse);
+
+    return () => {
+      socket.off("newTicket", handleNewTicket);
+      socket.off("updateTicket", handleUpdateTicket);
+      socket.off("ticketResponse", handleTicketResponse);
+    };
+  }, [socket, user?.id, page, filter]);
 
   const fetchTickets = async () => {
     setLoading(true);
@@ -80,7 +139,10 @@ const Tickets = () => {
         </div>
 
         {loading ? (
-          <div className="loading-overlay">Loading tickets...</div>
+          <LoadingIndicator
+            message="Loading your tickets..."
+            segmented={true}
+          />
         ) : error ? (
           <p className="error-message">{error}</p>
         ) : tickets.length === 0 ? (

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTickets } from "../services/ticketService";
+import { useSocket } from "../contexts/SocketContext";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 const AdminTickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -15,10 +17,86 @@ const AdminTickets = () => {
   });
 
   const navigate = useNavigate();
+  const socket = useSocket();
 
   useEffect(() => {
     fetchTickets();
   }, [page, filters]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new tickets
+    const handleNewTicket = (data) => {
+      // For admin, show all new tickets that match current filters
+      setTickets((prevTickets) => {
+        // If we're on the first page and the ticket matches our filters, add it
+        if (page === 1) {
+          // Check if the ticket already exists
+          const exists = prevTickets.some((t) => t._id === data.ticket._id);
+          if (!exists) {
+            // Apply filters
+            let matchesFilters = true;
+
+            if (
+              filters.status !== "all" &&
+              data.ticket.status !== filters.status
+            ) {
+              matchesFilters = false;
+            }
+
+            if (
+              filters.priority !== "all" &&
+              data.ticket.priority !== filters.priority
+            ) {
+              matchesFilters = false;
+            }
+
+            if (
+              filters.category !== "all" &&
+              data.ticket.category !== filters.category
+            ) {
+              matchesFilters = false;
+            }
+
+            if (matchesFilters) {
+              // Add new ticket to the beginning
+              return [data.ticket, ...prevTickets.slice(0, -1)];
+            }
+          }
+        }
+        return prevTickets;
+      });
+    };
+
+    // Listen for ticket updates
+    const handleUpdateTicket = (data) => {
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket._id === data.ticket._id ? data.ticket : ticket
+        )
+      );
+    };
+
+    // Listen for ticket responses
+    const handleTicketResponse = (data) => {
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket._id === data.ticket._id ? data.ticket : ticket
+        )
+      );
+    };
+
+    socket.on("newTicket", handleNewTicket);
+    socket.on("updateTicket", handleUpdateTicket);
+    socket.on("ticketResponse", handleTicketResponse);
+
+    return () => {
+      socket.off("newTicket", handleNewTicket);
+      socket.off("updateTicket", handleUpdateTicket);
+      socket.off("ticketResponse", handleTicketResponse);
+    };
+  }, [socket, page, filters]);
 
   const fetchTickets = async () => {
     setLoading(true);
@@ -131,7 +209,7 @@ const AdminTickets = () => {
         </div>
 
         {loading ? (
-          <div className="loading-overlay">Loading tickets...</div>
+          <LoadingIndicator message="Loading tickets..." segmented={true} />
         ) : error ? (
           <p className="error-message">{error}</p>
         ) : tickets.length === 0 ? (

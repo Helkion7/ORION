@@ -2,19 +2,27 @@ import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
+import ResponseNotification from "./ResponseNotification";
+// Remove ApiProgress import temporarily
+// import ApiProgress from "./ApiProgress";
 
 const Layout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
     <div className="app-container">
-      <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <Navbar onMenuToggle={handleToggleSidebar} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="content-container">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="page-container">
-          <Outlet />
-        </div>
+        <Outlet />
       </div>
+      <ResponseNotification />
+      {/* Remove ApiProgress until it's fixed */}
+      {/* <ApiProgress /> */}
     </div>
   );
 };

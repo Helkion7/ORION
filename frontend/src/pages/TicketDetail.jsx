@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getTicketById, addResponse } from "../services/ticketService";
 import { useAuth } from "../contexts/AuthContext";
+import { useSocket } from "../contexts/SocketContext";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 const TicketDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const socket = useSocket();
 
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,6 +20,27 @@ const TicketDetail = () => {
   useEffect(() => {
     fetchTicket();
   }, [id]);
+
+  // Add Socket.IO listener for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTicketResponse = (data) => {
+      // Only update if this is the ticket we're currently viewing
+      if (data.ticket && data.ticket._id === id) {
+        setTicket(data.ticket);
+      }
+    };
+
+    // Listen for both general updates and responses
+    socket.on("updateTicket", handleTicketResponse);
+    socket.on("ticketResponse", handleTicketResponse);
+
+    return () => {
+      socket.off("updateTicket", handleTicketResponse);
+      socket.off("ticketResponse", handleTicketResponse);
+    };
+  }, [socket, id]);
 
   const fetchTicket = async () => {
     try {
@@ -39,10 +63,13 @@ const TicketDetail = () => {
       setSubmitting(true);
       await addResponse(id, { text: response });
       setResponse("");
-      await fetchTicket(); // Reload ticket with new response
+      // We don't need to fetch the ticket again as the socket will update it
+      // This improves the UX by removing the need for an extra API call
     } catch (err) {
       setError("Failed to submit response");
       console.error(err);
+      // Fallback to fetching if there was an error
+      await fetchTicket();
     } finally {
       setSubmitting(false);
     }
@@ -76,6 +103,13 @@ const TicketDetail = () => {
     }
   };
 
+  // Filter out internal notes for regular users
+  const filteredResponses =
+    ticket?.responses?.filter((response) => {
+      // If it's not internal or user is admin, show the response
+      return !response.isInternal || user.role === "admin";
+    }) || [];
+
   if (loading) {
     return (
       <div className="window" style={{ width: "100%" }}>
@@ -83,7 +117,10 @@ const TicketDetail = () => {
           <div className="title-bar-text">Loading Ticket...</div>
         </div>
         <div className="window-body">
-          <div className="loading-overlay">Loading ticket details...</div>
+          <LoadingIndicator
+            message="Loading ticket details..."
+            showSpinner={true}
+          />
         </div>
       </div>
     );
@@ -166,8 +203,8 @@ const TicketDetail = () => {
             <div className="title-bar-text">Responses</div>
           </div>
           <div className="window-body">
-            {ticket.responses && ticket.responses.length > 0 ? (
-              ticket.responses.map((res, index) => (
+            {filteredResponses.length > 0 ? (
+              filteredResponses.map((res, index) => (
                 <div
                   key={index}
                   className="window"
@@ -208,7 +245,28 @@ const TicketDetail = () => {
               </div>
               <div className="button-row">
                 <button type="submit" disabled={submitting || !response.trim()}>
-                  {submitting ? "Submitting..." : "Submit Response"}
+                  {submitting ? (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      Submitting...
+                      <div
+                        className="progress-indicator"
+                        style={{ width: "50px", display: "inline-block" }}
+                      >
+                        <span
+                          className="progress-indicator-bar"
+                          style={{ width: "80%" }}
+                        />
+                      </div>
+                    </span>
+                  ) : (
+                    "Submit Response"
+                  )}
                 </button>
               </div>
             </form>

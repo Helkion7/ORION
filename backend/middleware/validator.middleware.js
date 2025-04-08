@@ -16,17 +16,7 @@ exports.validateRegister = [
     .withMessage("Please provide a valid email")
     .normalizeEmail(),
 
-  body("password")
-    .notEmpty()
-    .withMessage("Password is required")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters")
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/
-    )
-    .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
-    ),
+  body("password").notEmpty().withMessage("Password is required"),
 
   body("role")
     .optional()
@@ -79,16 +69,7 @@ exports.validateUpdateProfile = [
     .notEmpty()
     .withMessage("Current password is required when changing password"),
 
-  body("newPassword")
-    .optional()
-    .isLength({ min: 8 })
-    .withMessage("New password must be at least 8 characters")
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/
-    )
-    .withMessage(
-      "New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
-    ),
+  body("newPassword").optional(),
 ];
 
 // Validation middleware for creating tickets

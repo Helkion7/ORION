@@ -37,18 +37,8 @@ const Register = () => {
       return false;
     }
 
-    if (!formData.password) {
-      setError("Password is required");
-      return false;
-    }
-
-    // Password strength validation - must match backend requirements
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(formData.password)) {
-      setError(
-        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
-      );
+    if (!formData.password || formData.password.length < 8) {
+      setError("Password must be at least 8 characters");
       return false;
     }
 

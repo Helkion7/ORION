@@ -44,11 +44,6 @@ const Profile = () => {
         setError("New passwords do not match");
         return false;
       }
-
-      if (formData.newPassword && formData.newPassword.length < 8) {
-        setError("Password must be at least 8 characters long");
-        return false;
-      }
     }
 
     return true;
@@ -59,13 +54,18 @@ const Profile = () => {
     setError("");
     setSuccess("");
 
+    if (!validatePasswordChange()) {
+      return;
+    }
+
     // Basic validation
     if (!formData.name.trim()) {
       setError("Name is required");
       return;
     }
 
-    if (!validatePasswordChange()) {
+    if (formData.newPassword && formData.newPassword.length < 8) {
+      setError("New password must be at least 8 characters");
       return;
     }
 

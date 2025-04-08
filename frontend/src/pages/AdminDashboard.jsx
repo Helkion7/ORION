@@ -641,6 +641,9 @@ const AdminDashboard = () => {
           <Link to="/admin/leaderboard">
             <button>View Admin Leaderboard</button>
           </Link>
+          <Link to="/admin/knowledgebase" style={{ marginLeft: "10px" }}>
+            <button>Manage Knowledge Base</button>
+          </Link>
         </div>
       </div>
       <div className="status-bar">

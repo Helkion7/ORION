@@ -75,6 +75,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   Manage All Tickets
                 </li>
+                <li
+                  onClick={() => {
+                    navigate("/admin/knowledgebase");
+                    onClose();
+                  }}
+                >
+                  Knowledge Base
+                </li>
               </ul>
             </li>
           )}

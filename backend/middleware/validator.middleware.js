@@ -163,3 +163,28 @@ exports.validateAddResponse = [
     .isBoolean()
     .withMessage("isInternal must be a boolean value"),
 ];
+
+// Validation middleware for knowledge base entries
+exports.validateKnowledgeBase = [
+  body("title")
+    .notEmpty()
+    .withMessage("Please provide a title")
+    .isLength({ max: 200 })
+    .withMessage("Title cannot be more than 200 characters"),
+
+  body("content").notEmpty().withMessage("Please provide content"),
+
+  body("summary")
+    .notEmpty()
+    .withMessage("Please provide a summary")
+    .isLength({ max: 300 })
+    .withMessage("Summary cannot be more than 300 characters"),
+
+  body("category")
+    .notEmpty()
+    .withMessage("Please provide a category")
+    .isIn(["Hardware", "Software", "Network", "Security", "Account", "Other"])
+    .withMessage("Please select a valid category"),
+
+  body("tags").optional().isArray().withMessage("Tags must be an array"),
+];

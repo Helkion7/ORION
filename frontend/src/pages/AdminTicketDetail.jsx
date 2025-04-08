@@ -9,6 +9,7 @@ import { getUsers } from "../services/userService";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import LoadingIndicator from "../components/LoadingIndicator";
+import KnowledgeBasePanel from "../components/KnowledgeBasePanel";
 
 const AdminTicketDetail = () => {
   const { id } = useParams();
@@ -179,231 +180,251 @@ const AdminTicketDetail = () => {
           </button>
         </div>
 
-        <div className="window" style={{ width: "100%" }}>
-          <div className="title-bar">
-            <div className="title-bar-text">Ticket Information</div>
-          </div>
-          <div className="window-body">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "10px",
-              }}
-            >
-              <h3 style={{ margin: 0 }}>{ticket.title}</h3>
-              <button onClick={() => setEditing(!editing)}>
-                {editing ? "Cancel Edit" : "Edit Ticket"}
-              </button>
-            </div>
-
-            {!editing ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "10px",
-                  marginBottom: "15px",
-                }}
-              >
-                <div>
-                  <strong>Status:</strong>
-                  <span
-                    className={`status-badge status-${ticket.status.replace(
-                      " ",
-                      "-"
-                    )}`}
-                  >
-                    {ticket.status}
-                  </span>
-                </div>
-                <div>
-                  <strong>Priority:</strong>
-                  <span className={`priority-${ticket.priority}`}>
-                    {ticket.priority}
-                  </span>
-                </div>
-                <div>
-                  <strong>Category:</strong> {ticket.category}
-                </div>
-                <div>
-                  <strong>Created:</strong>{" "}
-                  {new Date(ticket.createdAt).toLocaleString()}
-                </div>
-                <div>
-                  <strong>User:</strong> {ticket.user?.name || "Unknown"} (
-                  {ticket.user?.email || "No email"})
-                </div>
-                <div>
-                  <strong>Assigned To:</strong>{" "}
-                  {ticket.assignedTo?.name || "Unassigned"}
-                </div>
+        <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
+          {/* Left side: Ticket details and responses */}
+          <div style={{ flex: "1 1 60%" }}>
+            <div className="window" style={{ width: "100%" }}>
+              <div className="title-bar">
+                <div className="title-bar-text">Ticket Information</div>
               </div>
-            ) : (
-              <form onSubmit={handleUpdateTicket}>
+              <div className="window-body">
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "15px",
-                    marginBottom: "15px",
-                  }}
-                >
-                  <div className="field-row-stacked">
-                    <label htmlFor="status">Status</label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={ticketUpdate.status}
-                      onChange={handleInputChange}
-                    >
-                      <option value="open">Open</option>
-                      <option value="in progress">In Progress</option>
-                      <option value="solved">Solved</option>
-                    </select>
-                  </div>
-
-                  <div className="field-row-stacked">
-                    <label htmlFor="priority">Priority</label>
-                    <select
-                      id="priority"
-                      name="priority"
-                      value={ticketUpdate.priority}
-                      onChange={handleInputChange}
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
-                  </div>
-
-                  <div className="field-row-stacked">
-                    <label htmlFor="assignedTo">Assign To (Admin only)</label>
-                    <select
-                      id="assignedTo"
-                      name="assignedTo"
-                      value={ticketUpdate.assignedTo}
-                      onChange={handleInputChange}
-                    >
-                      <option value="">Unassigned</option>
-                      {users.map((admin) => (
-                        <option key={admin._id} value={admin._id}>
-                          {admin.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="button-row">
-                  <button type="button" onClick={() => setEditing(false)}>
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="default"
-                  >
-                    {submitting ? "Saving..." : "Save Changes"}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            <fieldset>
-              <legend>Description</legend>
-              <div style={{ whiteSpace: "pre-wrap" }}>{ticket.description}</div>
-            </fieldset>
-          </div>
-        </div>
-
-        <div className="window" style={{ width: "100%", marginTop: "20px" }}>
-          <div className="title-bar">
-            <div className="title-bar-text">Ticket Responses</div>
-          </div>
-          <div className="window-body">
-            {ticket.responses && ticket.responses.length > 0 ? (
-              ticket.responses.map((res, index) => (
-                <div
-                  key={index}
-                  className="window"
-                  style={{
-                    width: "100%",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     marginBottom: "10px",
-                    borderLeft: res.isInternal
-                      ? "4px solid #AA5500"
-                      : res.respondedBy._id === user.id
-                      ? "4px solid #0000AA"
-                      : "4px solid #AA0000",
                   }}
                 >
-                  <div className="title-bar">
-                    <div className="title-bar-text">
-                      {res.respondedBy.name} ({res.respondedBy.role}) -{" "}
-                      {new Date(res.createdAt).toLocaleString()}
-                      {res.isInternal && " [INTERNAL NOTE]"}
+                  <h3 style={{ margin: 0 }}>{ticket.title}</h3>
+                  <button onClick={() => setEditing(!editing)}>
+                    {editing ? "Cancel Edit" : "Edit Ticket"}
+                  </button>
+                </div>
+
+                {!editing ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "10px",
+                      marginBottom: "15px",
+                    }}
+                  >
+                    <div>
+                      <strong>Status:</strong>
+                      <span
+                        className={`status-badge status-${ticket.status.replace(
+                          " ",
+                          "-"
+                        )}`}
+                      >
+                        {ticket.status}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Priority:</strong>
+                      <span className={`priority-${ticket.priority}`}>
+                        {ticket.priority}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Category:</strong> {ticket.category}
+                    </div>
+                    <div>
+                      <strong>Created:</strong>{" "}
+                      {new Date(ticket.createdAt).toLocaleString()}
+                    </div>
+                    <div>
+                      <strong>User:</strong> {ticket.user?.name || "Unknown"} (
+                      {ticket.user?.email || "No email"})
+                    </div>
+                    <div>
+                      <strong>Assigned To:</strong>{" "}
+                      {ticket.assignedTo?.name || "Unassigned"}
                     </div>
                   </div>
-                  <div className="window-body">
-                    <div style={{ whiteSpace: "pre-wrap" }}>{res.text}</div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p>No responses yet.</p>
-            )}
-
-            <form onSubmit={handleSubmitResponse}>
-              <div className="field-row-stacked" style={{ width: "100%" }}>
-                <label htmlFor="response">Add Response</label>
-                <textarea
-                  id="response"
-                  rows="4"
-                  value={response}
-                  onChange={(e) => setResponse(e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-              <div className="field-row">
-                <input
-                  id="internal-checkbox"
-                  type="checkbox"
-                  checked={isInternal}
-                  onChange={() => setIsInternal(!isInternal)}
-                />
-                <label htmlFor="internal-checkbox">
-                  Internal note (not visible to user)
-                </label>
-              </div>
-              <div className="button-row">
-                <button type="submit" disabled={submitting || !response.trim()}>
-                  {submitting ? (
-                    <span
+                ) : (
+                  <form onSubmit={handleUpdateTicket}>
+                    <div
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "5px",
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "15px",
+                        marginBottom: "15px",
                       }}
                     >
-                      Submitting...
-                      <div
-                        className="progress-indicator"
-                        style={{ width: "50px", display: "inline-block" }}
-                      >
-                        <span
-                          className="progress-indicator-bar"
-                          style={{ width: "80%" }}
-                        />
+                      <div className="field-row-stacked">
+                        <label htmlFor="status">Status</label>
+                        <select
+                          id="status"
+                          name="status"
+                          value={ticketUpdate.status}
+                          onChange={handleInputChange}
+                        >
+                          <option value="open">Open</option>
+                          <option value="in progress">In Progress</option>
+                          <option value="solved">Solved</option>
+                        </select>
                       </div>
-                    </span>
-                  ) : (
-                    "Submit Response"
-                  )}
-                </button>
+
+                      <div className="field-row-stacked">
+                        <label htmlFor="priority">Priority</label>
+                        <select
+                          id="priority"
+                          name="priority"
+                          value={ticketUpdate.priority}
+                          onChange={handleInputChange}
+                        >
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                      </div>
+
+                      <div className="field-row-stacked">
+                        <label htmlFor="assignedTo">
+                          Assign To (Admin only)
+                        </label>
+                        <select
+                          id="assignedTo"
+                          name="assignedTo"
+                          value={ticketUpdate.assignedTo}
+                          onChange={handleInputChange}
+                        >
+                          <option value="">Unassigned</option>
+                          {users.map((admin) => (
+                            <option key={admin._id} value={admin._id}>
+                              {admin.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="button-row">
+                      <button type="button" onClick={() => setEditing(false)}>
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="default"
+                      >
+                        {submitting ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <fieldset>
+                  <legend>Description</legend>
+                  <div style={{ whiteSpace: "pre-wrap" }}>
+                    {ticket.description}
+                  </div>
+                </fieldset>
               </div>
-            </form>
+            </div>
+
+            <div
+              className="window"
+              style={{ width: "100%", marginTop: "20px" }}
+            >
+              <div className="title-bar">
+                <div className="title-bar-text">Ticket Responses</div>
+              </div>
+              <div className="window-body">
+                {ticket.responses && ticket.responses.length > 0 ? (
+                  ticket.responses.map((res, index) => (
+                    <div
+                      key={index}
+                      className="window"
+                      style={{
+                        width: "100%",
+                        marginBottom: "10px",
+                        borderLeft: res.isInternal
+                          ? "4px solid #AA5500"
+                          : res.respondedBy._id === user.id
+                          ? "4px solid #0000AA"
+                          : "4px solid #AA0000",
+                      }}
+                    >
+                      <div className="title-bar">
+                        <div className="title-bar-text">
+                          {res.respondedBy.name} ({res.respondedBy.role}) -{" "}
+                          {new Date(res.createdAt).toLocaleString()}
+                          {res.isInternal && " [INTERNAL NOTE]"}
+                        </div>
+                      </div>
+                      <div className="window-body">
+                        <div style={{ whiteSpace: "pre-wrap" }}>{res.text}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p>No responses yet.</p>
+                )}
+
+                <form onSubmit={handleSubmitResponse}>
+                  <div className="field-row-stacked" style={{ width: "100%" }}>
+                    <label htmlFor="response">Add Response</label>
+                    <textarea
+                      id="response"
+                      rows="4"
+                      value={response}
+                      onChange={(e) => setResponse(e.target.value)}
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div className="field-row">
+                    <input
+                      id="internal-checkbox"
+                      type="checkbox"
+                      checked={isInternal}
+                      onChange={() => setIsInternal(!isInternal)}
+                    />
+                    <label htmlFor="internal-checkbox">
+                      Internal note (not visible to user)
+                    </label>
+                  </div>
+                  <div className="button-row">
+                    <button
+                      type="submit"
+                      disabled={submitting || !response.trim()}
+                    >
+                      {submitting ? (
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "5px",
+                          }}
+                        >
+                          Submitting...
+                          <div
+                            className="progress-indicator"
+                            style={{ width: "50px", display: "inline-block" }}
+                          >
+                            <span
+                              className="progress-indicator-bar"
+                              style={{ width: "80%" }}
+                            />
+                          </div>
+                        </span>
+                      ) : (
+                        "Submit Response"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          {/* Right side: Knowledge Base panel */}
+          <div style={{ flex: "1 1 40%", maxHeight: "75vh" }}>
+            {ticket && <KnowledgeBasePanel ticket={ticket} />}
           </div>
         </div>
       </div>

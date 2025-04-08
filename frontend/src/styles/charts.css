@@ -1,0 +1,21 @@
+.charts-container {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.chart-window {
+  border: 1px solid #dfdfdf;
+  background-color: #efefef;
+  position: relative;
+}
+
+/* Apply Windows 98 style to chart tooltips */
+.chartjs-tooltip {
+  font-family: "Pixelated MS Sans Serif", Arial, sans-serif;
+  font-size: 12px;
+  background: #ffffcc;
+  border: 1px solid #000000;
+  border-radius: 0;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+}

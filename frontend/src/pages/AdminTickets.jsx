@@ -241,7 +241,13 @@ const AdminTickets = () => {
             <p>No tickets found matching your criteria.</p>
           </div>
         ) : (
-          <div className="sunken-panel" style={{ height: "400px" }}>
+          <div
+            className="sunken-panel"
+            style={{
+              height: "calc(65vh - 200px)",
+              minHeight: "300px",
+            }}
+          >
             <table className="interactive">
               <thead>
                 <tr>

@@ -1,0 +1,27 @@
+/* Leaderboard specific styles */
+
+table.interactive tr.highlighted {
+  background-color: #c0c0c0;
+  font-weight: bold;
+}
+
+.trophy-icon {
+  font-size: 24px;
+  color: #eecc00;
+  margin-right: 8px;
+}
+
+.admin-medal-1 {
+  background-color: #ffd700 !important;
+  color: black;
+}
+
+.admin-medal-2 {
+  background-color: #c0c0c0 !important;
+  color: black;
+}
+
+.admin-medal-3 {
+  background-color: #cd7f32 !important;
+  color: black;
+}

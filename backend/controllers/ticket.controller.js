@@ -509,3 +509,54 @@ exports.getTicketStats = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get leaderboard of admins by resolved tickets
+// @route   GET /api/tickets/leaderboard
+// @access  Private/Admin
+exports.getAdminLeaderboard = async (req, res, next) => {
+  try {
+    // Use MongoDB aggregation to count resolved tickets by admin
+    const leaderboard = await Ticket.aggregate([
+      // Match only solved tickets that have been assigned
+      {
+        $match: { status: "solved", assignedTo: { $exists: true, $ne: null } },
+      },
+      // Group by assignedTo and count tickets
+      { $group: { _id: "$assignedTo", ticketCount: { $sum: 1 } } },
+      // Lookup admin details from User collection
+      {
+        $lookup: {
+          from: "users", // assuming your User model creates a "users" collection
+          localField: "_id",
+          foreignField: "_id",
+          as: "adminDetails",
+        },
+      },
+      // Unwind the adminDetails array to get a flat structure
+      { $unwind: "$adminDetails" },
+      // Project only the fields we need
+      {
+        $project: {
+          _id: 1,
+          adminName: "$adminDetails.name",
+          adminEmail: "$adminDetails.email",
+          ticketCount: 1,
+        },
+      },
+      // Sort by ticketCount descending
+      { $sort: { ticketCount: -1 } },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      count: leaderboard.length,
+      data: leaderboard,
+    });
+  } catch (error) {
+    console.error("Error fetching admin leaderboard:", error);
+    res.status(500).json({
+      success: false,
+      error: "Server error while fetching admin leaderboard",
+    });
+  }
+};

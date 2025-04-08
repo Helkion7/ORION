@@ -636,6 +636,12 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
+
+        <div className="field-row" style={{ marginTop: "20px" }}>
+          <Link to="/admin/leaderboard">
+            <button>View Admin Leaderboard</button>
+          </Link>
+        </div>
       </div>
       <div className="status-bar">
         <p className="status-bar-field">Admin Dashboard</p>

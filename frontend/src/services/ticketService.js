@@ -37,3 +37,8 @@ export const getTicketStats = async () => {
   const response = await api.get("/tickets/stats");
   return response.data;
 };
+
+export const getAdminLeaderboard = async () => {
+  const response = await api.get("/tickets/leaderboard");
+  return response.data;
+};

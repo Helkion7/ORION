@@ -10,6 +10,7 @@ const {
   deleteTicket,
   addResponse,
   getTicketStats,
+  getAdminLeaderboard,
 } = require("../controllers/ticket.controller");
 
 // Import middleware
@@ -51,6 +52,9 @@ router
 
 // Stats route (admin only)
 router.route("/stats").get(authorize("admin"), getTicketStats);
+
+// Admin leaderboard route
+router.route("/leaderboard").get(authorize("admin"), getAdminLeaderboard);
 
 // Individual ticket routes
 router

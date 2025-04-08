@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminTickets from "./pages/AdminTickets";
 import AdminTicketDetail from "./pages/AdminTicketDetail";
+import AdminLeaderboard from "./pages/AdminLeaderboard";
 
 const Router = () => {
   const { isAuthenticated, user } = useAuth();
@@ -79,6 +80,14 @@ const Router = () => {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminTicketDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/leaderboard"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminLeaderboard />
             </ProtectedRoute>
           }
         />

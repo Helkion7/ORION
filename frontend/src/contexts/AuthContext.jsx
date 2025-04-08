@@ -47,15 +47,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    setLoading(true);
-    setError(null);
     try {
-      console.log("Attempting registration...");
+      console.log("Register function received:", userData);
+      setLoading(true);
       const response = await api.post("/auth/register", userData);
       console.log("Registration response:", response.data);
       setUser(response.data.user);
       return response.data.user;
     } catch (err) {
+      console.error("Registration error details:", err);
       console.error("Registration error:", err.response?.data || err.message);
 
       // Better error handling for validation errors

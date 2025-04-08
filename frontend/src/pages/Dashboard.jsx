@@ -201,7 +201,13 @@ const Dashboard = () => {
                       {tickets.map((ticket) => (
                         <tr
                           key={ticket._id}
-                          onClick={() => navigate(`/tickets/${ticket._id}`)}
+                          onClick={() =>
+                            navigate(
+                              user?.role === "admin"
+                                ? `/admin/tickets/${ticket._id}`
+                                : `/tickets/${ticket._id}`
+                            )
+                          }
                         >
                           <td>{ticket._id.slice(-5)}</td>
                           <td>{ticket.title}</td>

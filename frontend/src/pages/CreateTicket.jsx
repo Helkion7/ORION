@@ -8,7 +8,7 @@ const CreateTicket = () => {
     title: "",
     description: "",
     category: "",
-    priority: "medium",
+    priority: "medium", // Default priority that users can't change
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -22,7 +22,8 @@ const CreateTicket = () => {
     "Account",
     "Other",
   ];
-  const priorities = ["low", "medium", "high", "urgent"];
+  // We'll keep this array for reference but won't use it in the UI
+  // const priorities = ["low", "medium", "high", "urgent"];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -101,21 +102,7 @@ const CreateTicket = () => {
             </select>
           </div>
 
-          <div className="field-row-stacked" style={{ width: "100%" }}>
-            <label htmlFor="priority">Priority</label>
-            <select
-              id="priority"
-              name="priority"
-              value={formData.priority}
-              onChange={handleChange}
-            >
-              {priorities.map((p) => (
-                <option key={p} value={p}>
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Priority dropdown has been removed */}
 
           <div className="field-row-stacked" style={{ width: "100%" }}>
             <label htmlFor="description">Description*</label>

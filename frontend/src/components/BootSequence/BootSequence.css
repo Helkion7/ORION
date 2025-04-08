@@ -1,0 +1,136 @@
+.boot-sequence-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #000;
+  overflow: hidden;
+}
+
+/* BIOS Screen */
+.bios-screen {
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  color: #fff;
+  font-family: "Courier New", monospace;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.bios-content {
+  max-width: 80%;
+  margin: 0 auto;
+}
+
+.bios-content p {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bios-blinking {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Windows 98 Logo Screen */
+.win98-logo-screen {
+  width: 100%;
+  height: 100%;
+  background-color: #008080;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.win98-logo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.win98-logo-flag {
+  width: 200px;
+  height: 140px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140"><rect width="200" height="140" fill="none"/><path d="M40,20 L160,20 L160,120 L40,120 Z" fill="%23FF0000"/><path d="M40,20 L100,70 L160,20 Z" fill="%23FFFFFF"/><path d="M40,120 L100,70 L160,120 Z" fill="%23FFFFFF"/><path d="M40,20 L100,70 L40,120 Z" fill="%23FFFFFF"/><path d="M160,20 L100,70 L160,120 Z" fill="%23FFFFFF"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  animation: wave 3s infinite alternate;
+}
+
+@keyframes wave {
+  0% {
+    transform: perspective(400px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(400px) rotateY(15deg);
+  }
+}
+
+.win98-text {
+  color: white;
+  font-family: "Arial", sans-serif;
+  font-size: 40px;
+  font-weight: bold;
+  margin-top: 20px;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.win98-text span {
+  font-size: 30px;
+  vertical-align: super;
+}
+
+/* Windows 98 Loading Screen */
+.win98-loading-screen {
+  width: 100%;
+  height: 100%;
+  background-color: #008080;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.loading-text {
+  color: white;
+  font-family: "MS Sans Serif", "Arial", sans-serif;
+  font-size: 18px;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.progress-indicator {
+  width: 300px;
+  height: 20px;
+  margin-bottom: 20px;
+}
+
+/* Skip Button */
+.skip-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  cursor: pointer;
+}

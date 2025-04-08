@@ -294,3 +294,34 @@ table th.sort-desc::after {
     grid-template-columns: 1fr;
   }
 }
+
+/* App content transition */
+.app-content {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.app-content-visible {
+  opacity: 1;
+}
+
+/* Rewatch boot sequence button styling */
+.rewatch-boot-button {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  z-index: 100;
+}
+
+.rewatch-boot-button button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.rewatch-boot-button button:hover {
+  opacity: 1;
+}

@@ -66,6 +66,31 @@ exports.validateUpdateUser = [
     .withMessage('Role must be either "user" or "admin"'),
 ];
 
+// Validation middleware for updating user profile
+exports.validateUpdateProfile = [
+  body("name")
+    .optional()
+    .isLength({ max: 50 })
+    .withMessage("Name cannot be more than 50 characters")
+    .trim(),
+
+  body("currentPassword")
+    .optional()
+    .notEmpty()
+    .withMessage("Current password is required when changing password"),
+
+  body("newPassword")
+    .optional()
+    .isLength({ min: 8 })
+    .withMessage("New password must be at least 8 characters")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/
+    )
+    .withMessage(
+      "New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+    ),
+];
+
 // Validation middleware for creating tickets
 exports.validateCreateTicket = [
   body("title")

@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   validateRegister,
   validateLogin,
+  validateUpdateProfile,
 } = require("../middleware/validator.middleware");
 const { sanitizeBody } = require("../middleware/sanitizer.middleware");
 const { protect } = require("../middleware/auth.middleware");
@@ -21,6 +22,12 @@ router.post("/register", validateRegister, sanitizeBody, register);
 router.post("/login", validateLogin, sanitizeBody, login);
 router.post("/logout", logout);
 router.get("/me", protect, getMe);
-router.put("/profile", protect, sanitizeBody, updateProfile);
+router.put(
+  "/profile",
+  protect,
+  validateUpdateProfile,
+  sanitizeBody,
+  updateProfile
+);
 
 module.exports = router;

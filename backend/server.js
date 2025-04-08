@@ -18,6 +18,9 @@ const app = express();
 // Create HTTP server
 const server = http.createServer(app);
 
+// Add express-sanitizer middleware before using it
+app.use(expressSanitizer());
+
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
@@ -82,9 +85,6 @@ app.use("/api/auth", authLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-
-// Add express-sanitizer after body parsers
-app.use(expressSanitizer());
 
 // Import routes
 const authRoutes = require("./routes/auth.routes");

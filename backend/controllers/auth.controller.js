@@ -115,6 +115,52 @@ exports.getMe = async (req, res, next) => {
   }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    // Update basic fields
+    if (req.body.name) {
+      user.name = req.body.name;
+    }
+
+    // Handle password change if provided
+    if (req.body.currentPassword && req.body.newPassword) {
+      // Verify current password
+      const isMatch = await user.matchPassword(req.body.currentPassword);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          error: "Current password is incorrect",
+        });
+      }
+
+      // Set new password
+      user.password = req.body.newPassword;
+    }
+
+    await user.save();
+
+    // Return updated user without password
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Helper function to send token response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create JWT token

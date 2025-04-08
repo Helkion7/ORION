@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const http = require("http");
 const { Server } = require("socket.io");
+const expressSanitizer = require("express-sanitizer");
 
 // Load environment variables
 dotenv.config();
@@ -81,6 +82,9 @@ app.use("/api/auth", authLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// Add express-sanitizer after body parsers
+app.use(expressSanitizer());
 
 // Import routes
 const authRoutes = require("./routes/auth.routes");

@@ -260,6 +260,30 @@ body {
   height: 3px;
 }
 
+/* Sortable table headers */
+table th {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+
+table th:hover {
+  background-color: #efefef;
+}
+
+table th::after {
+  display: inline-block;
+  width: 0.8em;
+}
+
+table th.sort-asc::after {
+  content: " ↑";
+}
+
+table th.sort-desc::after {
+  content: " ↓";
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   body {

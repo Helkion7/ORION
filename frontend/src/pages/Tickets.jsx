@@ -12,6 +12,8 @@ const Tickets = () => {
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState("all"); // all, open, in progress, solved
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const navigate = useNavigate();
   const socket = useSocket();
@@ -19,7 +21,7 @@ const Tickets = () => {
 
   useEffect(() => {
     fetchTickets();
-  }, [page, filter]);
+  }, [page, filter, sortField, sortDirection]);
 
   useEffect(() => {
     if (!socket) return;
@@ -79,7 +81,12 @@ const Tickets = () => {
     setLoading(true);
     try {
       // Set up filter params
-      const params = { page, limit: 10 };
+      const params = {
+        page,
+        limit: 10,
+        sort: `${sortDirection === "desc" ? "-" : ""}${sortField}`,
+      };
+
       if (filter !== "all") {
         params.status = filter;
       }
@@ -102,6 +109,24 @@ const Tickets = () => {
   const handleFilterChange = (e) => {
     setFilter(e.target.value);
     setPage(1); // Reset to first page when changing filters
+  };
+
+  const handleSort = (field) => {
+    // If clicking the same field, toggle direction
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // If clicking a new field, set it as the sort field with default desc direction
+      setSortField(field);
+      setSortDirection("desc");
+    }
+    setPage(1); // Reset to first page when changing sort
+  };
+
+  // Helper to render sort class
+  const getSortClass = (field) => {
+    if (sortField !== field) return "";
+    return sortDirection === "asc" ? "sort-asc" : "sort-desc";
   };
 
   return (
@@ -159,13 +184,48 @@ const Tickets = () => {
             <table className="interactive">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Priority</th>
-                  <th>Created</th>
-                  <th>Last Updated</th>
+                  <th
+                    onClick={() => handleSort("_id")}
+                    className={getSortClass("_id")}
+                  >
+                    ID
+                  </th>
+                  <th
+                    onClick={() => handleSort("title")}
+                    className={getSortClass("title")}
+                  >
+                    Title
+                  </th>
+                  <th
+                    onClick={() => handleSort("category")}
+                    className={getSortClass("category")}
+                  >
+                    Category
+                  </th>
+                  <th
+                    onClick={() => handleSort("status")}
+                    className={getSortClass("status")}
+                  >
+                    Status
+                  </th>
+                  <th
+                    onClick={() => handleSort("priority")}
+                    className={getSortClass("priority")}
+                  >
+                    Priority
+                  </th>
+                  <th
+                    onClick={() => handleSort("createdAt")}
+                    className={getSortClass("createdAt")}
+                  >
+                    Created
+                  </th>
+                  <th
+                    onClick={() => handleSort("updatedAt")}
+                    className={getSortClass("updatedAt")}
+                  >
+                    Last Updated
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -199,7 +259,6 @@ const Tickets = () => {
           </div>
         )}
 
-        {/* Pagination controls */}
         {!loading && tickets.length > 0 && (
           <div
             style={{

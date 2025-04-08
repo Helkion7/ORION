@@ -19,6 +19,11 @@ const {
   validateUpdateTicket,
   validateAddResponse,
 } = require("../middleware/validator.middleware");
+const {
+  sanitizeBody,
+  sanitizeParams,
+  sanitizeQuery,
+} = require("../middleware/sanitizer.middleware");
 
 // Rate limiting for ticket creation to prevent abuse
 const rateLimit = require("express-rate-limit");
@@ -36,8 +41,13 @@ router.use(protect);
 // Routes for all authenticated users
 router
   .route("/")
-  .post(ticketCreationLimiter, validateCreateTicket, createTicket) // Create ticket with rate limiting
-  .get(getTickets); // Get all tickets (filtered by permissions)
+  .get(sanitizeQuery, getTickets) // Apply sanitization to query
+  .post(
+    ticketCreationLimiter,
+    validateCreateTicket,
+    sanitizeBody,
+    createTicket
+  ); // Apply sanitization to body
 
 // Stats route (admin only)
 router.route("/stats").get(authorize("admin"), getTicketStats);
@@ -45,11 +55,13 @@ router.route("/stats").get(authorize("admin"), getTicketStats);
 // Individual ticket routes
 router
   .route("/:id")
-  .get(getTicket)
-  .put(validateUpdateTicket, updateTicket)
-  .delete(deleteTicket);
+  .get(sanitizeParams, getTicket) // Apply sanitization to params
+  .put(validateUpdateTicket, sanitizeBody, sanitizeParams, updateTicket) // Apply sanitization to body and params
+  .delete(sanitizeParams, deleteTicket); // Apply sanitization to params
 
 // Add response to ticket
-router.route("/:id/responses").post(validateAddResponse, addResponse);
+router
+  .route("/:id/responses")
+  .post(validateAddResponse, sanitizeBody, sanitizeParams, addResponse); // Apply sanitization to body and params
 
 module.exports = router;

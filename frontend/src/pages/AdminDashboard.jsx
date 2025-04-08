@@ -10,6 +10,8 @@ const AdminDashboard = () => {
   const [recentTickets, setRecentTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const navigate = useNavigate();
   const socket = useSocket();
@@ -23,10 +25,10 @@ const AdminDashboard = () => {
         const statsResult = await getTicketStats();
         setStats(statsResult.data);
 
-        // Fetch recent tickets
+        // Fetch recent tickets with sorting
         const ticketsResult = await getTickets({
           limit: 10,
-          sort: "-createdAt",
+          sort: `${sortDirection === "desc" ? "-" : ""}${sortField}`,
         });
         setRecentTickets(ticketsResult.data);
       } catch (err) {
@@ -38,7 +40,7 @@ const AdminDashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [sortField, sortDirection]);
 
   useEffect(() => {
     if (!socket) return;
@@ -140,6 +142,22 @@ const AdminDashboard = () => {
       default:
         return "#e0e0e0";
     }
+  };
+
+  const handleSort = (field) => {
+    // If clicking the same field, toggle direction
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // If clicking a new field, set it as the sort field with default desc direction
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const getSortClass = (field) => {
+    if (sortField !== field) return "";
+    return sortDirection === "asc" ? "sort-asc" : "sort-desc";
   };
 
   if (loading) {
@@ -248,13 +266,48 @@ const AdminDashboard = () => {
                 <table className="interactive">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>User</th>
-                      <th>Title</th>
-                      <th>Category</th>
-                      <th>Status</th>
-                      <th>Priority</th>
-                      <th>Created</th>
+                      <th
+                        onClick={() => handleSort("_id")}
+                        className={getSortClass("_id")}
+                      >
+                        ID
+                      </th>
+                      <th
+                        onClick={() => handleSort("user.name")}
+                        className={getSortClass("user.name")}
+                      >
+                        User
+                      </th>
+                      <th
+                        onClick={() => handleSort("title")}
+                        className={getSortClass("title")}
+                      >
+                        Title
+                      </th>
+                      <th
+                        onClick={() => handleSort("category")}
+                        className={getSortClass("category")}
+                      >
+                        Category
+                      </th>
+                      <th
+                        onClick={() => handleSort("status")}
+                        className={getSortClass("status")}
+                      >
+                        Status
+                      </th>
+                      <th
+                        onClick={() => handleSort("priority")}
+                        className={getSortClass("priority")}
+                      >
+                        Priority
+                      </th>
+                      <th
+                        onClick={() => handleSort("createdAt")}
+                        className={getSortClass("createdAt")}
+                      >
+                        Created
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

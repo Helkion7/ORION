@@ -15,13 +15,15 @@ const AdminTickets = () => {
     priority: "all",
     category: "all",
   });
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const navigate = useNavigate();
   const socket = useSocket();
 
   useEffect(() => {
     fetchTickets();
-  }, [page, filters]);
+  }, [page, filters, sortField, sortDirection]);
 
   useEffect(() => {
     if (!socket) return;
@@ -102,7 +104,11 @@ const AdminTickets = () => {
     setLoading(true);
     try {
       // Set up filter params
-      const params = { page, limit: 15 };
+      const params = {
+        page,
+        limit: 15,
+        sort: `${sortDirection === "desc" ? "-" : ""}${sortField}`,
+      };
 
       if (filters.status !== "all") {
         params.status = filters.status;
@@ -138,6 +144,24 @@ const AdminTickets = () => {
       [name]: value,
     }));
     setPage(1); // Reset to first page when changing filters
+  };
+
+  const handleSort = (field) => {
+    // If clicking the same field, toggle direction
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // If clicking a new field, set it as the sort field with default desc direction
+      setSortField(field);
+      setSortDirection("desc");
+    }
+    setPage(1); // Reset to first page when changing sort
+  };
+
+  // Helper to render sort indicator
+  const getSortClass = (field) => {
+    if (sortField !== field) return "";
+    return sortDirection === "asc" ? "sort-asc" : "sort-desc";
   };
 
   return (
@@ -221,14 +245,54 @@ const AdminTickets = () => {
             <table className="interactive">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>User</th>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Priority</th>
-                  <th>Created</th>
-                  <th>Assigned To</th>
+                  <th
+                    onClick={() => handleSort("_id")}
+                    className={getSortClass("_id")}
+                  >
+                    ID
+                  </th>
+                  <th
+                    onClick={() => handleSort("user.name")}
+                    className={getSortClass("user.name")}
+                  >
+                    User
+                  </th>
+                  <th
+                    onClick={() => handleSort("title")}
+                    className={getSortClass("title")}
+                  >
+                    Title
+                  </th>
+                  <th
+                    onClick={() => handleSort("category")}
+                    className={getSortClass("category")}
+                  >
+                    Category
+                  </th>
+                  <th
+                    onClick={() => handleSort("status")}
+                    className={getSortClass("status")}
+                  >
+                    Status
+                  </th>
+                  <th
+                    onClick={() => handleSort("priority")}
+                    className={getSortClass("priority")}
+                  >
+                    Priority
+                  </th>
+                  <th
+                    onClick={() => handleSort("createdAt")}
+                    className={getSortClass("createdAt")}
+                  >
+                    Created
+                  </th>
+                  <th
+                    onClick={() => handleSort("assignedTo.name")}
+                    className={getSortClass("assignedTo.name")}
+                  >
+                    Assigned To
+                  </th>
                 </tr>
               </thead>
               <tbody>

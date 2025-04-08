@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getTickets } from "../services/ticketService";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket, useSocketWithError } from "../contexts/SocketContext";
@@ -10,6 +10,10 @@ const Dashboard = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
+
+  const navigate = useNavigate();
   const { user } = useAuth();
   const socket = useSocket();
   const { connectionError } = useSocketWithError();
@@ -24,7 +28,11 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const result = await getTickets({ limit: 5, sort: "-createdAt" });
+        setLoading(true);
+        const result = await getTickets({
+          limit: 5,
+          sort: `${sortDirection === "desc" ? "-" : ""}${sortField}`,
+        });
         setTickets(result.data);
       } catch (err) {
         setError("Failed to fetch tickets");
@@ -35,7 +43,7 @@ const Dashboard = () => {
     };
 
     fetchTickets();
-  }, []);
+  }, [sortField, sortDirection]);
 
   useEffect(() => {
     if (!socket) return;
@@ -70,6 +78,20 @@ const Dashboard = () => {
       socket.off("ticketResponse", handleUpdateTicket);
     };
   }, [socket, user?.id]);
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const getSortClass = (field) => {
+    if (sortField !== field) return "";
+    return sortDirection === "asc" ? "sort-asc" : "sort-desc";
+  };
 
   return (
     <div className="window" style={{ width: "100%" }}>
@@ -149,10 +171,30 @@ const Dashboard = () => {
                   <table className="interactive">
                     <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Status</th>
-                        <th>Created</th>
+                        <th
+                          onClick={() => handleSort("_id")}
+                          className={getSortClass("_id")}
+                        >
+                          ID
+                        </th>
+                        <th
+                          onClick={() => handleSort("title")}
+                          className={getSortClass("title")}
+                        >
+                          Title
+                        </th>
+                        <th
+                          onClick={() => handleSort("status")}
+                          className={getSortClass("status")}
+                        >
+                          Status
+                        </th>
+                        <th
+                          onClick={() => handleSort("createdAt")}
+                          className={getSortClass("createdAt")}
+                        >
+                          Created
+                        </th>
                       </tr>
                     </thead>
                     <tbody>

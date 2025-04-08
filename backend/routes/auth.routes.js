@@ -1,5 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const {
+  validateRegister,
+  validateLogin,
+} = require("../middleware/validator.middleware");
+const { sanitizeBody } = require("../middleware/sanitizer.middleware");
+const { protect } = require("../middleware/auth.middleware");
 
 // Import controllers
 const {
@@ -7,21 +13,14 @@ const {
   login,
   logout,
   getMe,
+  updateProfile,
 } = require("../controllers/auth.controller");
 
-// Import middleware
-const { protect } = require("../middleware/auth.middleware");
-const {
-  validateRegister,
-  validateLogin,
-} = require("../middleware/validator.middleware");
-
-// Register and login routes (public)
-router.post("/register", validateRegister, register);
-router.post("/login", validateLogin, login);
+// Routes
+router.post("/register", validateRegister, sanitizeBody, register);
+router.post("/login", validateLogin, sanitizeBody, login);
 router.post("/logout", logout);
-
-// Protected routes (require authentication)
 router.get("/me", protect, getMe);
+router.put("/profile", protect, sanitizeBody, updateProfile);
 
 module.exports = router;

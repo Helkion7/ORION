@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
+import "./styles/charts.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SocketProvider } from "./contexts/SocketContext";
-import Router from "./Router";
 import BootSequence from "./components/BootSequence/BootSequence";
-import "./styles/charts.css"; // Import the new charts CSS
+import Router from "./Router";
 
 function App() {
   const [bootComplete, setBootComplete] = useState(false);

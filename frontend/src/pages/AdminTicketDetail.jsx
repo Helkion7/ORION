@@ -80,7 +80,9 @@ const AdminTicketDetail = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await getUsers({ role: "admin" });
+      const response = await getUsers({
+        role: ["admin", "firstLineSupport", "secondLineSupport"],
+      });
       if (response && response.data) {
         setUsers(response.data);
       } else {
@@ -88,7 +90,7 @@ const AdminTicketDetail = () => {
         setUsers([]);
       }
     } catch (err) {
-      console.error("Failed to fetch admin users:", err);
+      console.error("Failed to fetch support staff users:", err);
       setUsers([]);
     }
   };
@@ -285,7 +287,7 @@ const AdminTicketDetail = () => {
 
                       <div className="field-row-stacked">
                         <label htmlFor="assignedTo">
-                          Assign To (Admin only)
+                          Assign To (Support Staff)
                         </label>
                         <select
                           id="assignedTo"
@@ -294,9 +296,9 @@ const AdminTicketDetail = () => {
                           onChange={handleInputChange}
                         >
                           <option value="">Unassigned</option>
-                          {users.map((admin) => (
-                            <option key={admin._id} value={admin._id}>
-                              {admin.name}
+                          {users.map((staff) => (
+                            <option key={staff._id} value={staff._id}>
+                              {staff.name} ({staff.role})
                             </option>
                           ))}
                         </select>

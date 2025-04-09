@@ -9,13 +9,13 @@ dotenv.config();
 
 // Configuration
 const TOTAL_TICKETS = 100; // Adjust this number to generate more or fewer tickets
-const MAX_RESPONSES_PER_TICKET = 5;
+const MAX_RESPONSES_PER_TICKET = 10;
 const TICKETS_WITH_RESPONSES_PERCENT = 70; // % of tickets that will have responses
 const TICKETS_ASSIGNED_PERCENT = 60; // % of tickets that will be assigned to admins
 const TICKETS_SOLVED_PERCENT = 30; // % of tickets that will be in "solved" status
 
 // Max time range for ticket creation (in days)
-const MAX_DAYS_PAST = 60; // Tickets will be created between now and this many days ago
+const MAX_DAYS_PAST = 365; // Tickets will be created between now and this many days ago
 
 // Connect to MongoDB
 mongoose
@@ -53,206 +53,216 @@ const TICKET_CATEGORIES = [
 const TICKET_PRIORITIES = ["low", "medium", "high", "urgent"];
 const TICKET_STATUSES = ["open", "in progress", "solved"];
 
-// Hardware issue templates
+// Staff roles
+const STAFF_ROLES = ["admin", "firstLineSupport", "secondLineSupport"];
+
+// Hardware issue templates with more descriptive content
 const hardwareIssues = [
   {
     title: "Computer won't turn on",
     description:
-      "When I press the power button, nothing happens. I've checked the power cable and it's plugged in correctly.",
+      "When I press the power button, my computer doesn't start up. The power light doesn't come on, and I don't hear any fans spinning. I've checked that it's properly plugged in and tried a different power outlet with no success. This started happening yesterday after a brief power outage in our building.",
   },
   {
-    title: "Monitor display is flickering",
+    title: "Monitor displaying distorted colors",
     description:
-      "My screen keeps flickering every few minutes, making it difficult to work.",
+      "My monitor is showing strange colors - everything has a greenish tint, and some areas are displaying incorrectly. I've already tried adjusting the monitor settings but the issue persists. The monitor is about 3 years old and was working perfectly until this morning.",
   },
   {
-    title: "Printer not connecting",
+    title: "Printer not working",
     description:
-      "I can't get my printer to connect to my computer. I've tried reinstalling the drivers but it still doesn't work.",
+      "My HP LaserJet printer isn't printing any documents. When I try to print, it shows a paper jam error, but I've checked thoroughly and there's no paper jam. I've tried turning it off and on, disconnecting and reconnecting the USB cable, and reinstalling the drivers with no success.",
+  },
+  {
+    title: "Computer running extremely slowly",
+    description:
+      "My workstation has become incredibly slow over the past week. Simple tasks like opening Word documents or browsing the internet take minutes instead of seconds. The computer is about 2 years old and has an Intel i5 processor with 8GB RAM. I haven't installed any new software recently.",
   },
   {
     title: "Keyboard keys not responding",
     description:
-      "Several keys on my keyboard have stopped working, specifically the A, S, and D keys.",
+      "Several keys on my keyboard (specifically W, E, R, and T) have stopped working. I've cleaned under the keys but they still aren't responding. This is severely limiting my ability to type efficiently and complete my work. Could I get a replacement keyboard?",
   },
   {
-    title: "Overheating laptop",
+    title: "Battery not charging",
     description:
-      "My laptop gets extremely hot after just 30 minutes of use and then shuts down automatically.",
-  },
-  {
-    title: "Headphones not detected",
-    description:
-      "When I plug my headphones in, the computer doesn't recognize them and continues playing sound through speakers.",
+      "My laptop battery isn't charging anymore. When I plug in the power adapter, the charging light doesn't come on, and the battery percentage continues to decrease. I've tried using a different power outlet and checking the adapter connection, but the issue persists.",
   },
 ];
 
-// Software issue templates
+// Software issue templates with more realistic problems
 const softwareIssues = [
   {
-    title: "Application crashes on startup",
+    title: "Unable to install required software",
     description:
-      "The software crashes immediately when I try to open it. I've already tried reinstalling it.",
+      "I need to install the latest version of Adobe Creative Suite for a project, but I keep getting error code 0x80070643 during installation. I've tried running the installer as administrator and disabling my antivirus temporarily, but I still get the same error. This is blocking my progress on an urgent project due next week.",
   },
   {
-    title: "Unable to save documents",
+    title: "Excel crashes when opening large files",
     description:
-      "When I try to save my work, I get an error message saying 'Access Denied'.",
+      "Microsoft Excel keeps crashing whenever I try to open spreadsheets larger than 5MB. I work with financial data that often exceeds this size. The application freezes for about 30 seconds and then closes without any error message. I've already tried repairing the Office installation through Control Panel.",
   },
   {
-    title: "Software running extremely slow",
+    title: "Email attachments not downloading",
     description:
-      "The application takes several minutes to perform basic operations that used to be instant.",
+      "I can't download attachments from emails in Outlook. When I click on an attachment, nothing happens - no error message, no download dialog. This is happening with all types of attachments (PDF, Word docs, images). I've checked my download folder and nothing appears there either.",
   },
   {
-    title: "Feature not working as expected",
+    title: "Windows Update failing",
     description:
-      "The search functionality doesn't return any results, even for items I know exist in the database.",
+      "Windows Update is failing to install updates with error code 0x8024400A. I've tried the Windows Update Troubleshooter and clearing the update cache using the official Microsoft guidelines, but the same error keeps appearing. My system might have security vulnerabilities without these updates.",
   },
   {
-    title: "Update failed",
+    title: "Application compatibility issue after upgrade",
     description:
-      "When trying to update the software to the latest version, it gets to 80% and then gives an error.",
+      "After upgrading to Windows 11, our proprietary accounting software doesn't work correctly. It shows strange UI glitches and crashes when trying to generate reports. The software vendor says they don't officially support Windows 11 yet, but I need this working for month-end closing next week.",
   },
   {
-    title: "Missing menu options",
+    title: "Need software installed that requires admin rights",
     description:
-      "Some of the menu options that should be available are not showing up in the interface.",
+      "I need to install statistical analysis software (SPSS) for a research project, but it requires administrator privileges which I don't have on my work computer. The software is approved by our department and I have a valid license, but I need IT assistance to complete the installation.",
   },
 ];
 
-// Network issue templates
+// Network issue templates with technical details
 const networkIssues = [
   {
-    title: "Cannot connect to internet",
+    title: "Cannot connect to company VPN",
     description:
-      "My computer says it's connected to WiFi but I can't access any websites.",
+      "I'm unable to connect to the company VPN from home. When I try to connect using the GlobalProtect client, it gets stuck on 'Connecting...' for several minutes and then times out with error 'Failed to establish connection to server'. I need urgent access to work files that are only available on the internal network.",
   },
   {
-    title: "VPN connection keeps dropping",
+    title: "Intermittent connection drops in meeting room B",
     description:
-      "I'm experiencing frequent disconnections from the VPN, approximately every 15 minutes.",
+      "When working in meeting room B, my laptop repeatedly loses connection to the WiFi network (ORION-CORP). This happens approximately every 10-15 minutes and lasts for about 30 seconds each time. This is disrupting video meetings and causing problems for everyone using this room.",
   },
   {
-    title: "Extremely slow network speed",
+    title: "Extremely slow file transfer speeds",
     description:
-      "File downloads that should take minutes are taking hours to complete.",
+      "Transferring files to and from the network drive is extremely slow (less than 1MB/s when it should be at least 10MB/s). This is making it difficult to work with large design files that need to be accessed from the shared project folder. Other network operations like browsing the internet seem normal.",
   },
   {
-    title: "Unable to access shared drives",
+    title: "Unable to connect to printer over network",
     description:
-      "I can't access the department's shared network drive, but my colleagues can.",
+      "I can't connect to the network printer (HP LaserJet 4350 in the Marketing department). My computer can see the printer in the network devices list, but when I try to print, I get an error saying 'Cannot connect to printer'. Other people in my department can print to it without issues.",
   },
   {
-    title: "Email not syncing",
+    title: "Can't access specific websites",
     description:
-      "New emails aren't showing up in my client even though I can see them on my phone.",
+      "I'm unable to access several websites needed for my research, including scholar.google.com and researchgate.net. Other websites load normally. When trying to access these sites, the browser just shows 'This site can't be reached'. Are these being blocked by the company firewall?",
   },
   {
-    title: "WiFi signal weak in my office",
+    title: "WiFi connectivity issues with company laptop",
     description:
-      "I have very poor WiFi reception at my desk, but it works fine in other parts of the building.",
+      "My computer says it's connected to WiFi but I can't access any websites. The WiFi icon shows full signal strength, but browsers and other internet-dependent applications can't connect. I've tried restarting my computer and reconnecting to the network multiple times.",
   },
 ];
 
-// Security issue templates
+// Security issues with more detailed descriptions
 const securityIssues = [
   {
-    title: "Suspicious login attempts",
+    title: "Suspicious login attempts detected",
     description:
-      "I've received notifications about login attempts from unknown locations.",
+      "I've received multiple email alerts about unsuccessful login attempts to my company account from an IP address in Eastern Europe. I've changed my password immediately, but I'm concerned about these repeated attempts. Could someone from IT security review these alerts and advise if further action is needed?",
+    priority: "high",
   },
   {
-    title: "Unable to change password",
+    title: "Potential phishing email received",
     description:
-      "The system won't accept my new password even though it meets all the complexity requirements.",
+      "I received an email claiming to be from our CEO asking for urgent wire transfer details. The email address looks slightly off (ceo.orion@gmail.com instead of our company domain), and the tone doesn't match his usual communication style. I've not responded, but I wanted to report this as it might be targeting other employees too.",
+    priority: "high",
   },
   {
-    title: "Need access to restricted area",
+    title: "Antivirus software constantly showing alerts",
     description:
-      "I require access to the secure document repository for my new project.",
+      "My computer's antivirus software (McAfee) has been showing frequent alerts about blocked threats over the past two days, usually when browsing work-related websites. I haven't clicked on any suspicious links or downloaded unusual files. Is this a false positive or should I be concerned?",
   },
   {
-    title: "Possible phishing email received",
+    title: "Lost company phone with sensitive information",
     description:
-      "I received an email that looks suspicious and may be attempting to steal credentials.",
+      "I misplaced my company-issued iPhone yesterday evening, possibly in a taxi. It has my work email and access to several company applications. I've tried calling the phone but it goes straight to voicemail. Can you help me remotely wipe the device and issue a replacement?",
+    priority: "urgent",
   },
   {
-    title: "Two-factor authentication not working",
+    title: "Need help setting up multi-factor authentication",
     description:
-      "I'm not receiving the verification codes on my phone when trying to log in.",
+      "According to the recent security policy update, I need to set up multi-factor authentication for my account by Friday. I've tried following the instructions in the email, but I'm encountering difficulties at the verification step. Could someone walk me through this process?",
   },
   {
-    title: "Security certificate warning",
+    title: "Unauthorized software installation detected",
     description:
-      "I keep getting security warnings when accessing our internal websites.",
+      "I received an alert from IT security about unauthorized software on my computer, but I don't recall installing anything unusual. The notification mentioned something about a 'browser extension' being detected. I want to resolve this as quickly as possible.",
   },
 ];
 
-// Account issue templates
+// Account issue templates with user-specific problems
 const accountIssues = [
   {
-    title: "Account locked out",
+    title: "Account locked after password attempts",
     description:
-      "I can't log in because my account has been locked due to too many failed attempts.",
+      "My account has been locked after multiple failed login attempts this morning. I may have mistyped my password a few times, but now I can't access any company systems even with the correct password. I need this resolved urgently as I have deliverables due today.",
+    priority: "high",
   },
   {
-    title: "Need email alias created",
+    title: "Need permissions for project folder",
     description:
-      "I need an additional email alias set up for a new project I'm leading.",
+      "I've been assigned to the Phoenix Marketing Project, but I don't have access to the shared project folder at \\\\server\\projects\\phoenix. Could you please grant me read/write permissions? My manager Jacob Peterson has approved this request.",
   },
   {
-    title: "Missing permissions",
+    title: "Email alias setup request",
     description:
-      "I can't access the financial reporting tool that I need for my job.",
+      "I need an additional email alias set up for a new project I'm leading. The alias should be phoenix.project@orion.com and should forward to my regular email address. This was approved by Department Head Sarah Johnson and will be used for client communications on the Phoenix project.",
   },
   {
-    title: "Name change request",
+    title: "Name change in company directory",
     description:
-      "I recently got married and need my name updated in all systems.",
+      "I recently got married and need my name updated in all company systems. My previous name was Jane Smith, and my new legal name is Jane Rodriguez. I've already updated my HR records, but my email, directory listing, and other systems still show my old name.",
   },
   {
-    title: "Account migration issue",
+    title: "Need temporary access for contractor",
     description:
-      "During the recent system migration, some of my user settings and preferences were lost.",
+      "We have a web developer contractor (Michael Chen, m.chen@webdevpros.com) starting next Monday who will need access to our WordPress environment and design asset library for 6 weeks. Could you please create a temporary account with appropriate permissions? This has been approved by Lisa Wong in Procurement.",
   },
   {
-    title: "Unable to reset security questions",
+    title: "Password reset not sending verification email",
     description:
-      "When trying to update my security questions, the system gives an error.",
+      "I tried to reset my password using the self-service portal, but I'm not receiving the verification email that should be sent to my personal email address (registered as backup). I've checked my spam folder and waited over an hour. I need access to complete an urgent client presentation.",
+    priority: "high",
   },
 ];
 
-// Other issue templates
+// Other miscellaneous issue templates
 const otherIssues = [
   {
-    title: "Office equipment request",
+    title: "Request for dual monitors",
     description:
-      "I need a second monitor for my workstation to improve productivity.",
+      "I'd like to request a second monitor for my workstation to improve productivity when working with multiple applications. My role in data analysis often requires comparing spreadsheets and reports side by side. My manager David Torres has approved this request.",
   },
   {
-    title: "Software license request",
+    title: "Conference room AV setup assistance",
     description:
-      "I need a license for Adobe Photoshop to complete my design work.",
+      "We're hosting an important client presentation in Conference Room A tomorrow at 10 AM and need help ensuring the audiovisual equipment is working properly. Specifically, we need to connect a MacBook Pro to the projector and ensure the sound works through the room speakers. Could someone from IT be available at 9:30 AM to assist?",
+    priority: "high",
   },
   {
-    title: "Training session inquiry",
+    title: "Mobile app testing device request",
     description:
-      "When is the next training session for the new reporting system?",
+      "Our development team needs an Android device with Android 11 or newer for testing our company's mobile app before release. We currently only have access to older devices running Android 9. Could IT provide a newer test device or approve purchase of one? Budget code for this project is DEV-2023-142.",
   },
   {
-    title: "Building access problem",
-    description: "My access card isn't working on the main entrance door.",
+    title: "Request for specialized software training",
+    description:
+      "I recently started using Tableau for data visualization as part of my role, but I'm struggling with creating advanced dashboards. Does IT offer any training resources or could you recommend external training options that the company might approve?",
   },
   {
-    title: "Teleconference setup help",
+    title: "Office relocation tech support",
     description:
-      "I need assistance setting up the conference room for a virtual meeting tomorrow.",
+      "I'm moving to a different desk (from 4th floor, desk 4B to 3rd floor, desk 12C) next Monday as part of department reorganization. I'll need help disconnecting and reconnecting my equipment, ensuring network connectivity, and setting up my phone extension at the new location.",
   },
   {
-    title: "Ergonomic assessment request",
+    title: "Headset recommendation for video calls",
     description:
-      "I'm experiencing wrist pain and would like an ergonomic assessment of my workspace.",
+      "With the increase in remote meetings, I need a good quality headset compatible with our video conferencing software. Could you recommend a company-approved headset that works well with Microsoft Teams and has good noise cancellation? Is there a procurement process for this?",
   },
 ];
 
@@ -266,45 +276,85 @@ const issueTemplates = {
   Other: otherIssues,
 };
 
-// Response templates from IT staff
+// Response templates from IT staff - enhanced with more professional content
 const adminResponses = [
-  "I've taken a look at this issue. Could you please provide more information about when this started happening?",
-  "Thanks for reporting this. I've created a case and assigned it to the appropriate team.",
-  "I've replicated the issue on my end. We're working on a fix and will update you soon.",
-  "This seems to be related to the recent system upgrade. We're investigating the cause.",
-  "Have you tried restarting the device? This often resolves the issue.",
-  "I'll need to schedule a time to remotely access your computer to diagnose this further.",
-  "We've identified the cause of the problem and are working on a solution. We expect it to be resolved within 24 hours.",
-  "This issue has been escalated to our senior technical team.",
-  "The problem appears to be with the network settings. I'll work with the network team to address this.",
-  "Could you please try clearing your browser cache and cookies, then attempt again?",
+  "I've taken a look at this issue and created ticket #REF-2023-{ticketId}. Could you please provide more information about when this problem first started occurring and any error messages you're seeing?",
+
+  "Thank you for reporting this issue. I've assigned it to our specialized team that handles these matters. You should receive a follow-up response by the end of the day.",
+
+  "I've replicated the issue on our test environment and identified the likely cause. I'll be applying a fix remotely to your system within the next hour. Please save any open work as your computer may need to restart during this process.",
+
+  "Based on your description, this appears to be related to a known issue affecting several users. Our team is working on a permanent fix, but in the meantime, you can use this workaround: [detailed steps provided]",
+
+  "I'll need to schedule a remote session to investigate this further. Are you available tomorrow between 10 AM and 12 PM? Please confirm a time that works for you.",
+
+  "We've deployed a fix to your system. Please test the functionality again and let us know if you're still experiencing issues. If everything is working correctly, we'll close this ticket in 24 hours.",
+
+  "This issue requires a hardware replacement. I've put in an order for the necessary parts (reference #HW-23789), which should arrive within 2-3 business days. We'll contact you to arrange installation once they arrive.",
+
+  "I've escalated this to our Level 2 support team as it requires specialized knowledge. The new ticket reference is L2-2023-{ticketId}, and you'll be contacted by a senior technician within 4 hours.",
+
+  "We need to update your system to the latest version to resolve this issue. This will require approximately 30 minutes of downtime. Would you prefer we do this during lunch hours or at the end of your workday?",
+
+  "I've added the requested permissions to your account. Please allow up to 15 minutes for the changes to propagate through the system, then try accessing the resource again.",
 ];
 
-// Internal note templates
+// Internal notes for admin communication
 const internalNotes = [
-  "User has reported this issue multiple times. Need to prioritize.",
-  "Checked system logs - no errors found. May need hardware inspection.",
-  "Similar issue reported by other users in the same department. Possible wider problem.",
-  "User has limited technical knowledge. Will need to provide detailed instructions.",
-  "This is a known issue with the latest update. Reference bug #4582.",
-  "Assigned to network team for further investigation.",
-  "Low priority - workaround is available and has been communicated to user.",
-  "Will require on-site visit to resolve.",
-  "Parts have been ordered. ETA 3 business days.",
-  "Issue appears to be intermittent. Advised user to document when it occurs.",
+  "This is a recurring issue for this department. Recommend scheduling a full system audit next month. Contact manager to coordinate.",
+
+  "User has reported similar issues 3 times in the past month. Hardware is approaching end-of-life and should be scheduled for replacement in the next refresh cycle. Added to the replacement list for Q4.",
+
+  "Checked system logs and found evidence of resource contention. The user's workstation has insufficient RAM for the applications they're running. Recommending upgrade from 8GB to 16GB.",
+
+  "This is a known issue with the latest Windows security patch (KB5005565). Microsoft has acknowledged the bug and is working on a fix expected in next month's update. Added to our tracking system.",
+
+  "The problem appears to be network-related rather than application-specific. Notified network team to investigate potential issues with the switch in Building B, 3rd floor.",
+
+  "User has administrative privileges that they shouldn't have according to our security policy. Need to review and adjust permissions without disrupting their workflow. Consulting with their manager first.",
+
+  "This issue affects multiple users in the Marketing department. Creating a broader investigation and will develop a department-wide solution rather than handling individually.",
+
+  "Password reset requests from this user have been unusually frequent (4 in past month). May need security awareness training - flagging for next session.",
+
+  "Hardware diagnostic tests indicate the storage drive is beginning to fail (multiple bad sectors detected). Need to schedule data backup and drive replacement before complete failure.",
+
+  "This is a licensing issue - we've reached our limit for concurrent users on this software. Procurement has been notified to purchase additional licenses. ETA for resolution is 5 business days.",
 ];
 
-// User response templates
+// User response templates with more varied and realistic content
 const userResponses = [
-  "Thanks for your help. The issue is still happening. Here's some additional information...",
-  "I tried what you suggested but it didn't solve the problem.",
-  "The problem seems to be getting worse. Can we escalate this?",
-  "That fixed it! Thank you so much for your quick assistance.",
-  "I'm not available during the time you suggested. Can we reschedule?",
-  "I've attached a screenshot showing the error message.",
-  "I've noticed this happens only when I'm connected to the VPN.",
-  "Could you please explain that in simpler terms? I'm not very technical.",
-  "Is there a workaround I can use while you're fixing this?",
+  "Thank you for looking into this. I've noticed that the issue happens most frequently in the afternoons, usually after I've been using the application for a few hours. There's no specific error message, just the behavior I described.",
+
+  'I tried the solution you suggested but unfortunately the problem is still occurring. The specific error message is: "Error code: 0x80074D06 - Network connectivity issues detected."',
+
+  "The workaround is helping for now, thank you! However, I'm concerned that this is just a temporary fix. When do you think a permanent solution will be available?",
+
+  "I'll be available for a remote session tomorrow at 10:30 AM. Should I expect a call or will you send a meeting invitation with connection details?",
+
+  "I've attached a screenshot showing exactly what happens when the error occurs. You can see the dialog box that appears and the unusual behavior in the background application.",
+
+  "The issue seems to be getting worse. Now I can't access any of my files, and my deadline is tomorrow morning. Is there any way to expedite this?",
+
+  "Thank you for resolving this so quickly! Everything is working perfectly now. I really appreciate your help with this urgent matter.",
+
+  "I'm having trouble following the instructions in step 3. When I click on 'Network Settings' as suggested, I don't see the option for 'Advanced Configuration' that you mentioned.",
+
+  "I've noticed that the problem only occurs when I'm connected to the VPN. If I disconnect from VPN, everything works normally, but I need VPN access for my work.",
+
+  "This is a critical issue affecting our entire team. We have a client presentation in two days and can't prepare without access to these files. Please prioritize this if possible.",
+];
+
+// Additional detailed user notes for ticket context
+const additionalNotes = [
+  "This issue is preventing me from completing a critical project due by the end of this week. Any expedited assistance would be greatly appreciated.",
+
+  "I've already tried rebooting my computer, clearing browser cache, and disabling extensions as suggested in the IT self-help guide.",
+
+  "This is the third time this month I've experienced this problem. Previous ticket references: #45892 and #46013.",
+
+  "My colleagues on the same team are experiencing identical issues, so this might be affecting our entire department.",
+
   "This is urgent as it's preventing me from completing my project by the deadline.",
 ];
 
@@ -315,12 +365,12 @@ const seedTickets = async () => {
     console.log("Previous tickets deleted successfully");
 
     // Get users from database
-    const admins = await User.find({ role: "admin" });
+    const admins = await User.find({ role: { $in: STAFF_ROLES } });
     const regularUsers = await User.find({ role: "user" });
 
     if (admins.length === 0) {
       throw new Error(
-        "No admin users found. Please run the main seed script first."
+        "No admin/support users found. Please run the main seed script first."
       );
     }
 
@@ -331,7 +381,7 @@ const seedTickets = async () => {
     }
 
     console.log(
-      `Found ${admins.length} admin users and ${regularUsers.length} regular users`
+      `Found ${admins.length} support staff users and ${regularUsers.length} regular users`
     );
 
     // Create tickets array
@@ -358,41 +408,82 @@ const seedTickets = async () => {
         status = "open";
       }
 
+      // Set priority - make security and account issues more likely to be high/urgent
+      let priority;
+      if (category === "Security" || category === "Account") {
+        // Higher chance of important priority for security/account issues
+        priority = shouldHappen(60)
+          ? getRandomItem(["high", "urgent"])
+          : getRandomItem(["low", "medium"]);
+      } else {
+        // Normal distribution for other categories
+        priority = getRandomItem(TICKET_PRIORITIES);
+      }
+
+      // Allow override if the template specifies a priority
+      if (issueTemplate.priority) {
+        priority = issueTemplate.priority;
+      }
+
+      // Add a random note to some ticket descriptions for more variety
+      const description = shouldHappen(30)
+        ? `${issueTemplate.description}\n\n${getRandomItem(additionalNotes)}`
+        : issueTemplate.description;
+
       // Create the base ticket
       const ticket = {
         title: issueTemplate.title,
-        description: issueTemplate.description,
+        description: description,
         category: category,
         status: status,
-        priority: getRandomItem(TICKET_PRIORITIES),
+        priority: priority,
         user: getRandomItem(regularUsers)._id,
         createdAt: creationDate,
         updatedAt: creationDate,
         responses: [],
       };
 
-      // Assign to admin if applicable (especially for in-progress tickets)
+      // Assign to support staff if applicable
       if (
         status === "in progress" ||
         status === "solved" ||
         shouldHappen(TICKETS_ASSIGNED_PERCENT)
       ) {
-        ticket.assignedTo = getRandomItem(admins)._id;
+        // Assign to appropriate support staff based on priority and category
+        if (
+          priority === "urgent" ||
+          priority === "high" ||
+          category === "Security"
+        ) {
+          // Assign higher priority/security issues to admins more often
+          const adminUsers = admins.filter((admin) => admin.role === "admin");
+          ticket.assignedTo =
+            adminUsers.length > 0
+              ? getRandomItem(adminUsers)._id
+              : getRandomItem(admins)._id;
+        } else {
+          // Distribute other tickets among all support staff
+          ticket.assignedTo = getRandomItem(admins)._id;
+        }
       }
 
       // Add responses to some tickets
       if (shouldHappen(TICKETS_WITH_RESPONSES_PERCENT)) {
-        // Number of responses for this ticket
-        const responseCount =
-          Math.floor(Math.random() * MAX_RESPONSES_PER_TICKET) + 1;
+        // Number of responses for this ticket - more responses for older tickets
+        const daysSinceCreation =
+          (new Date() - creationDate) / (1000 * 60 * 60 * 24);
+        const maxResponses = Math.min(
+          MAX_RESPONSES_PER_TICKET,
+          Math.ceil(daysSinceCreation / 7) + 1
+        );
+        const responseCount = Math.floor(Math.random() * maxResponses) + 1;
 
         // Create response entries
         for (let j = 0; j < responseCount; j++) {
           // Calculate response time (between ticket creation and now)
           const responseDate = new Date(creationDate);
-          responseDate.setHours(
-            responseDate.getHours() + Math.floor(Math.random() * 72) + 1
-          ); // 1-72 hours after ticket or previous response
+          const hoursToAdd = Math.floor(Math.random() * 72) + j * 24 + 1; // Space out responses more realistically
+          responseDate.setHours(responseDate.getHours() + hoursToAdd);
 
           if (responseDate > new Date()) {
             // Skip if response date would be in the future
@@ -406,7 +497,10 @@ const seedTickets = async () => {
           // Create response object
           const response = {
             text: isAdminResponse
-              ? getRandomItem(adminResponses)
+              ? getRandomItem(adminResponses).replace(
+                  "{ticketId}",
+                  ticket._id ? ticket._id.toString().slice(-5) : "xxxxx"
+                )
               : getRandomItem(userResponses),
             respondedBy: isAdminResponse
               ? ticket.assignedTo || getRandomItem(admins)._id
@@ -428,23 +522,34 @@ const seedTickets = async () => {
           }
         }
 
-        // If we have admin responses and the ticket was open, change to in progress
-        if (
-          ticket.status === "open" &&
-          ticket.responses.some((r) =>
-            admins.some((a) => a._id.toString() === r.respondedBy.toString())
-          )
-        ) {
-          ticket.status = "in progress";
-
-          // If ticket wasn't assigned, assign it to the first admin who responded
-          if (!ticket.assignedTo) {
-            const firstAdminResponse = ticket.responses.find((r) =>
+        // Update status based on responses
+        if (ticket.responses.length > 0) {
+          if (ticket.status === "solved") {
+            // No change needed - ticket is already solved
+          } else if (ticket.responses.some((r) => r.isInternal)) {
+            // If there are internal notes, ticket is likely being worked on
+            ticket.status = "in progress";
+          } else if (ticket.responses.length >= 2 && shouldHappen(50)) {
+            // Some tickets with multiple responses are solved
+            ticket.status = shouldHappen(40) ? "solved" : "in progress";
+          } else if (
+            ticket.status === "open" &&
+            ticket.responses.some((r) =>
               admins.some((a) => a._id.toString() === r.respondedBy.toString())
-            );
-            if (firstAdminResponse) {
-              ticket.assignedTo = firstAdminResponse.respondedBy;
-            }
+            )
+          ) {
+            // If an admin has responded, likely the ticket is in progress
+            ticket.status = "in progress";
+          }
+        }
+
+        // If ticket wasn't assigned but has admin responses, assign it to the first admin who responded
+        if (!ticket.assignedTo) {
+          const firstAdminResponse = ticket.responses.find((r) =>
+            admins.some((a) => a._id.toString() === r.respondedBy.toString())
+          );
+          if (firstAdminResponse) {
+            ticket.assignedTo = firstAdminResponse.respondedBy;
           }
         }
       }
@@ -471,10 +576,25 @@ const seedTickets = async () => {
     ).length;
     const assignedTickets = tickets.filter((t) => t.assignedTo).length;
 
+    // Count by priority
+    const urgentTickets = tickets.filter((t) => t.priority === "urgent").length;
+    const highTickets = tickets.filter((t) => t.priority === "high").length;
+    const mediumTickets = tickets.filter((t) => t.priority === "medium").length;
+    const lowTickets = tickets.filter((t) => t.priority === "low").length;
+
+    // Count by category
+    const categoryCounts = {};
+    TICKET_CATEGORIES.forEach((category) => {
+      categoryCounts[category] = tickets.filter(
+        (t) => t.category === category
+      ).length;
+    });
+
     console.log(`
 Data Summary:
 ------------
 Total Tickets: ${TOTAL_TICKETS}
+
 Status Distribution:
   - Open: ${openTickets} (${((openTickets / TOTAL_TICKETS) * 100).toFixed(1)}%)
   - In Progress: ${inProgressTickets} (${(
@@ -484,11 +604,33 @@ Status Distribution:
   - Solved: ${solvedTickets} (${((solvedTickets / TOTAL_TICKETS) * 100).toFixed(
       1
     )}%)
-Tickets with Responses: ${ticketsWithResponses} (${(
+
+Priority Distribution:
+  - Urgent: ${urgentTickets} (${((urgentTickets / TOTAL_TICKETS) * 100).toFixed(
+      1
+    )}%)
+  - High: ${highTickets} (${((highTickets / TOTAL_TICKETS) * 100).toFixed(1)}%)
+  - Medium: ${mediumTickets} (${((mediumTickets / TOTAL_TICKETS) * 100).toFixed(
+      1
+    )}%)
+  - Low: ${lowTickets} (${((lowTickets / TOTAL_TICKETS) * 100).toFixed(1)}%)
+
+Category Distribution:
+${Object.entries(categoryCounts)
+  .map(
+    ([category, count]) =>
+      `  - ${category}: ${count} (${((count / TOTAL_TICKETS) * 100).toFixed(
+        1
+      )}%)`
+  )
+  .join("\n")}
+
+Ticket Details:
+  - With Responses: ${ticketsWithResponses} (${(
       (ticketsWithResponses / TOTAL_TICKETS) *
       100
     ).toFixed(1)}%)
-Assigned Tickets: ${assignedTickets} (${(
+  - Assigned: ${assignedTickets} (${(
       (assignedTickets / TOTAL_TICKETS) *
       100
     ).toFixed(1)}%)

@@ -44,86 +44,123 @@ exports.createTicket = async (req, res, next) => {
 // @access  Private
 exports.getTickets = async (req, res, next) => {
   try {
-    let query;
+    // Build base query
+    let baseQuery = {};
 
     // If user is not admin, only show their tickets
     if (req.user.role !== "admin") {
-      query = Ticket.find({ user: req.user.id });
-    } else {
-      // Admins can see all tickets
-      query = Ticket.find();
+      baseQuery.user = req.user.id;
     }
 
-    // Copy req.query to add additional filtering
-    const reqQuery = { ...req.query };
-
-    // Fields to exclude from filtering
-    const removeFields = ["select", "sort", "page", "limit"];
-    removeFields.forEach((param) => delete reqQuery[param]);
-
-    // Create query string and operators ($gt, $gte, etc)
-    let queryStr = JSON.stringify(reqQuery);
-    queryStr = queryStr.replace(
-      /\b(gt|gte|lt|lte|in)\b/g,
-      (match) => `$${match}`
-    );
-
-    // Finding resource with parsed query
-    query = query.find(JSON.parse(queryStr));
-
-    // Select specific fields
-    if (req.query.select) {
-      const fields = req.query.select.split(",").join(" ");
-      query = query.select(fields);
+    // Process search term
+    if (req.query.search) {
+      const searchRegex = new RegExp(req.query.search, "i");
+      baseQuery.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        // We'll add user search through aggregation later
+      ];
     }
 
-    // Sort
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(",").join(" ");
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort("-createdAt"); // Default sort by newest
+    // Process role filter
+    if (req.query.role) {
+      if (req.query.role === "unassigned") {
+        // Filter for tickets with no assignment
+        baseQuery.assignedTo = { $exists: false };
+      } else {
+        // Find users with the specified role and get their IDs
+        const User = require("../models/User");
+        const usersWithRole = await User.find({ role: req.query.role }).select(
+          "_id"
+        );
+        const userIds = usersWithRole.map((user) => user._id);
+        baseQuery.assignedTo = { $in: userIds };
+      }
     }
+
+    // Copy basic filter parameters
+    const filterParams = ["status", "priority", "category"];
+    filterParams.forEach((param) => {
+      if (req.query[param]) {
+        baseQuery[param] = req.query[param];
+      }
+    });
 
     // Pagination
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const total = await Ticket.countDocuments(JSON.parse(queryStr));
+    const skip = (page - 1) * limit;
 
-    query = query.skip(startIndex).limit(limit);
+    // Sorting
+    const sortParam = req.query.sort || "-createdAt";
 
-    // Populate with user info
-    query = query.populate([
+    // Execute query with aggregation for better search capabilities
+    const tickets = await Ticket.aggregate([
+      { $match: baseQuery },
       {
-        path: "user",
-        select: "name email",
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "userData",
+        },
       },
       {
-        path: "assignedTo",
-        select: "name email",
+        $lookup: {
+          from: "users",
+          localField: "assignedTo",
+          foreignField: "_id",
+          as: "assignedToData",
+        },
       },
       {
-        path: "responses.respondedBy",
-        select: "name email role",
+        $addFields: {
+          user: { $arrayElemAt: ["$userData", 0] },
+          assignedTo: { $arrayElemAt: ["$assignedToData", 0] },
+        },
+      },
+      // Add search for user name/email if search term exists
+      ...(req.query.search
+        ? [
+            {
+              $match: {
+                $or: [
+                  { "user.name": new RegExp(req.query.search, "i") },
+                  { "user.email": new RegExp(req.query.search, "i") },
+                  { "assignedTo.name": new RegExp(req.query.search, "i") },
+                  { "assignedTo.email": new RegExp(req.query.search, "i") },
+                  // The baseQuery already has title and description
+                ],
+              },
+            },
+          ]
+        : []),
+      { $sort: parseSortString(sortParam) },
+      { $skip: skip },
+      { $limit: limit },
+      // Clean up temporary fields
+      {
+        $project: {
+          userData: 0,
+          assignedToData: 0,
+        },
       },
     ]);
 
-    // Execute query
-    const tickets = await query;
+    // Get total count for pagination
+    const total = await Ticket.countDocuments(baseQuery);
 
     // Pagination result
     const pagination = {};
 
-    if (endIndex < total) {
+    if (skip + tickets.length < total) {
       pagination.next = {
         page: page + 1,
         limit,
       };
     }
 
-    if (startIndex > 0) {
+    if (skip > 0) {
       pagination.prev = {
         page: page - 1,
         limit,
@@ -141,6 +178,22 @@ exports.getTickets = async (req, res, next) => {
     next(error);
   }
 };
+
+// Helper function to parse sort string
+function parseSortString(sortString) {
+  const result = {};
+  const fields = sortString.split(" ");
+
+  fields.forEach((field) => {
+    if (field.startsWith("-")) {
+      result[field.substring(1)] = -1;
+    } else {
+      result[field] = 1;
+    }
+  });
+
+  return result;
+}
 
 // @desc    Get single ticket
 // @route   GET /api/tickets/:id
@@ -230,10 +283,15 @@ exports.updateTicket = async (req, res, next) => {
       const User = require("../models/User");
       const assignedUser = await User.findById(req.body.assignedTo);
 
-      if (!assignedUser || assignedUser.role !== "admin") {
+      if (
+        !assignedUser ||
+        (assignedUser.role !== "admin" &&
+          assignedUser.role !== "firstLineSupport" &&
+          assignedUser.role !== "secondLineSupport")
+      ) {
         return res.status(400).json({
           success: false,
-          error: "Tickets can only be assigned to admin users",
+          error: "Tickets can only be assigned to support staff",
         });
       }
     }
@@ -472,6 +530,30 @@ exports.getTicketStats = async (req, res, next) => {
       },
     ]);
 
+    // Get counts by role of assignedTo users
+    const roleStats = await Ticket.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "assignedTo",
+          foreignField: "_id",
+          as: "assignedUser",
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $cond: {
+              if: { $gt: [{ $size: "$assignedUser" }, 0] },
+              then: { $arrayElemAt: ["$assignedUser.role", 0] },
+              else: null,
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
     // Recent activity (last 5 days)
     const today = new Date();
     const fiveDaysAgo = new Date(today);
@@ -502,6 +584,7 @@ exports.getTicketStats = async (req, res, next) => {
         statusStats,
         categoryStats,
         priorityStats,
+        roleStats,
         recentActivity,
       },
     });

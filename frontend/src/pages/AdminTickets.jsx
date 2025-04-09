@@ -14,6 +14,8 @@ const AdminTickets = () => {
     status: "all",
     priority: "all",
     category: "all",
+    role: "all",
+    searchTerm: "",
   });
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
@@ -122,6 +124,14 @@ const AdminTickets = () => {
         params.category = filters.category;
       }
 
+      if (filters.role !== "all") {
+        params.role = filters.role;
+      }
+
+      if (filters.searchTerm) {
+        params.search = filters.searchTerm;
+      }
+
       const result = await getTickets(params);
       setTickets(result.data);
       setPagination(result.pagination);
@@ -173,12 +183,25 @@ const AdminTickets = () => {
         {/* Filters */}
         <div className="window" style={{ width: "100%", marginBottom: "15px" }}>
           <div className="title-bar">
-            <div className="title-bar-text">Filters</div>
+            <div className="title-bar-text">Search & Filters</div>
           </div>
           <div
             className="window-body"
             style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}
           >
+            <div className="field-row" style={{ flex: "1" }}>
+              <label htmlFor="searchTerm">Search:</label>
+              <input
+                id="searchTerm"
+                name="searchTerm"
+                type="text"
+                value={filters.searchTerm}
+                onChange={handleFilterChange}
+                placeholder="Search tickets..."
+                style={{ flex: "1" }}
+              />
+            </div>
+
             <div className="field-row">
               <label htmlFor="status">Status:</label>
               <select
@@ -228,7 +251,37 @@ const AdminTickets = () => {
               </select>
             </div>
 
+            <div className="field-row">
+              <label htmlFor="role">Assigned To:</label>
+              <select
+                id="role"
+                name="role"
+                value={filters.role}
+                onChange={handleFilterChange}
+              >
+                <option value="all">All</option>
+                <option value="unassigned">Unassigned</option>
+                <option value="admin">Admin</option>
+                <option value="firstLineSupport">First Line Support</option>
+                <option value="secondLineSupport">Second Line Support</option>
+              </select>
+            </div>
+
             <button onClick={fetchTickets}>Apply Filters</button>
+            <button
+              onClick={() => {
+                setFilters({
+                  status: "all",
+                  priority: "all",
+                  category: "all",
+                  role: "all",
+                  searchTerm: "",
+                });
+                setPage(1);
+              }}
+            >
+              Clear Filters
+            </button>
           </div>
         </div>
 

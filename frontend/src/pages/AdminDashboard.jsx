@@ -18,6 +18,7 @@ import {
   PointElement,
   LineElement,
 } from "chart.js";
+import AdminStatistics from "../components/AdminStatistics";
 
 // Register Chart.js components
 ChartJS.register(
@@ -452,199 +453,230 @@ const AdminDashboard = () => {
         <div className="title-bar-text">Admin Dashboard</div>
       </div>
       <div className="window-body">
-        <h2>Admin Control Panel</h2>
+        {loading ? (
+          <LoadingIndicator message="Loading dashboard data..." />
+        ) : error ? (
+          <p className="error-message">{error}</p>
+        ) : (
+          <>
+            <AdminStatistics />
+            <h2>Admin Control Panel</h2>
 
-        <PromoteUserForm />
+            <PromoteUserForm />
 
-        {renderCharts()}
-
-        <div className="dashboard-grid">
-          <div className="window" style={{ width: "100%" }}>
-            <div className="title-bar">
-              <div className="title-bar-text">Quick Actions</div>
-            </div>
-            <div className="window-body">
-              <div className="desktop-icon-grid">
-                <Link to="/admin/tickets" className="desktop-icon">
-                  <img
-                    src="https://i.imgur.com/cxTwSkA.png"
-                    alt="All Tickets"
-                  />
-                  <span>All Tickets</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="window" style={{ width: "100%" }}>
-            <div className="title-bar">
-              <div className="title-bar-text">Ticket Status</div>
-            </div>
-            <div className="window-body">
-              <div className="stats-container">
-                {stats &&
-                  formatStatusStats(stats.statusStats).map((item) => (
-                    <div
-                      key={item.status}
-                      className="window"
-                      style={{ margin: "5px" }}
-                    >
-                      <div
-                        className="title-bar"
-                        style={{ backgroundColor: getStatusColor(item.status) }}
-                      >
-                        <div className="title-bar-text">{item.status}</div>
-                      </div>
-                      <div
-                        className="window-body"
-                        style={{ textAlign: "center", padding: "10px" }}
-                      >
-                        <h2 style={{ margin: "0" }}>{item.count}</h2>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="window" style={{ width: "100%", marginTop: "20px" }}>
-          <div className="title-bar">
-            <div className="title-bar-text">Recent Tickets</div>
-          </div>
-          <div className="window-body">
-            {recentTickets.length === 0 ? (
-              <p>No tickets found in the system.</p>
-            ) : (
-              <div
-                className="sunken-panel"
-                style={{
-                  height: "calc(40vh - 100px)",
-                  minHeight: "250px",
-                }}
+            <div style={{ marginBottom: "20px" }}>
+              <button onClick={() => navigate("/admin/tickets")}>
+                View All Tickets
+              </button>
+              <button
+                onClick={() => navigate("/admin/users")}
+                style={{ marginLeft: "10px" }}
               >
-                <table className="interactive">
-                  <thead>
-                    <tr>
-                      <th
-                        onClick={() => handleSort("_id")}
-                        className={getSortClass("_id")}
-                      >
-                        ID
-                      </th>
-                      <th
-                        onClick={() => handleSort("user.name")}
-                        className={getSortClass("user.name")}
-                      >
-                        User
-                      </th>
-                      <th
-                        onClick={() => handleSort("title")}
-                        className={getSortClass("title")}
-                      >
-                        Title
-                      </th>
-                      <th
-                        onClick={() => handleSort("category")}
-                        className={getSortClass("category")}
-                      >
-                        Category
-                      </th>
-                      <th
-                        onClick={() => handleSort("status")}
-                        className={getSortClass("status")}
-                      >
-                        Status
-                      </th>
-                      <th
-                        onClick={() => handleSort("priority")}
-                        className={getSortClass("priority")}
-                      >
-                        Priority
-                      </th>
-                      <th
-                        onClick={() => handleSort("createdAt")}
-                        className={getSortClass("createdAt")}
-                      >
-                        Created
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentTickets.map((ticket) => (
-                      <tr
-                        key={ticket._id}
-                        onClick={() => navigate(`/admin/tickets/${ticket._id}`)}
-                      >
-                        <td>{ticket._id.slice(-5)}</td>
-                        <td>{ticket.user?.name || "Unknown"}</td>
-                        <td>{ticket.title}</td>
-                        <td>{ticket.category}</td>
-                        <td>
-                          <span
-                            className={`status-badge status-${ticket.status.replace(
-                              " ",
-                              "-"
-                            )}`}
-                          >
-                            {ticket.status}
-                          </span>
-                        </td>
-                        <td className={`priority-${ticket.priority}`}>
-                          {ticket.priority}
-                        </td>
-                        <td>
-                          {new Date(ticket.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                Manage Users
+              </button>
+            </div>
+
+            {renderCharts()}
+
+            <div className="dashboard-grid">
+              <div className="window" style={{ width: "100%" }}>
+                <div className="title-bar">
+                  <div className="title-bar-text">Quick Actions</div>
+                </div>
+                <div className="window-body">
+                  <div className="desktop-icon-grid">
+                    <Link to="/admin/tickets" className="desktop-icon">
+                      <img
+                        src="https://i.imgur.com/cxTwSkA.png"
+                        alt="All Tickets"
+                      />
+                      <span>All Tickets</span>
+                    </Link>
+                  </div>
+                </div>
               </div>
-            )}
-            <div style={{ marginTop: "10px", textAlign: "right" }}>
-              <Link to="/admin/tickets">
-                <button>View all tickets</button>
+
+              <div className="window" style={{ width: "100%" }}>
+                <div className="title-bar">
+                  <div className="title-bar-text">Ticket Status</div>
+                </div>
+                <div className="window-body">
+                  <div className="stats-container">
+                    {stats &&
+                      formatStatusStats(stats.statusStats).map((item) => (
+                        <div
+                          key={item.status}
+                          className="window"
+                          style={{ margin: "5px" }}
+                        >
+                          <div
+                            className="title-bar"
+                            style={{
+                              backgroundColor: getStatusColor(item.status),
+                            }}
+                          >
+                            <div className="title-bar-text">{item.status}</div>
+                          </div>
+                          <div
+                            className="window-body"
+                            style={{ textAlign: "center", padding: "10px" }}
+                          >
+                            <h2 style={{ margin: "0" }}>{item.count}</h2>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="window"
+              style={{ width: "100%", marginTop: "20px" }}
+            >
+              <div className="title-bar">
+                <div className="title-bar-text">Recent Tickets</div>
+              </div>
+              <div className="window-body">
+                {recentTickets.length === 0 ? (
+                  <p>No tickets found in the system.</p>
+                ) : (
+                  <div
+                    className="sunken-panel"
+                    style={{
+                      height: "calc(40vh - 100px)",
+                      minHeight: "250px",
+                    }}
+                  >
+                    <table className="interactive">
+                      <thead>
+                        <tr>
+                          <th
+                            onClick={() => handleSort("_id")}
+                            className={getSortClass("_id")}
+                          >
+                            ID
+                          </th>
+                          <th
+                            onClick={() => handleSort("user.name")}
+                            className={getSortClass("user.name")}
+                          >
+                            User
+                          </th>
+                          <th
+                            onClick={() => handleSort("title")}
+                            className={getSortClass("title")}
+                          >
+                            Title
+                          </th>
+                          <th
+                            onClick={() => handleSort("category")}
+                            className={getSortClass("category")}
+                          >
+                            Category
+                          </th>
+                          <th
+                            onClick={() => handleSort("status")}
+                            className={getSortClass("status")}
+                          >
+                            Status
+                          </th>
+                          <th
+                            onClick={() => handleSort("priority")}
+                            className={getSortClass("priority")}
+                          >
+                            Priority
+                          </th>
+                          <th
+                            onClick={() => handleSort("createdAt")}
+                            className={getSortClass("createdAt")}
+                          >
+                            Created
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentTickets.map((ticket) => (
+                          <tr
+                            key={ticket._id}
+                            onClick={() =>
+                              navigate(`/admin/tickets/${ticket._id}`)
+                            }
+                          >
+                            <td>{ticket._id.slice(-5)}</td>
+                            <td>{ticket.user?.name || "Unknown"}</td>
+                            <td>{ticket.title}</td>
+                            <td>{ticket.category}</td>
+                            <td>
+                              <span
+                                className={`status-badge status-${ticket.status.replace(
+                                  " ",
+                                  "-"
+                                )}`}
+                              >
+                                {ticket.status}
+                              </span>
+                            </td>
+                            <td className={`priority-${ticket.priority}`}>
+                              {ticket.priority}
+                            </td>
+                            <td>
+                              {new Date(ticket.createdAt).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div style={{ marginTop: "10px", textAlign: "right" }}>
+                  <Link to="/admin/tickets">
+                    <button>View all tickets</button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="window"
+              style={{ width: "100%", marginTop: "20px" }}
+            >
+              <div className="title-bar">
+                <div className="title-bar-text">Ticket Categories</div>
+              </div>
+              <div className="window-body">
+                <div className="sunken-panel">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th>Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats &&
+                        formatCategoryStats(stats.categoryStats).map((item) => (
+                          <tr key={item._id}>
+                            <td>{item._id}</td>
+                            <td>{item.count}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="field-row" style={{ marginTop: "20px" }}>
+              <Link to="/admin/leaderboard">
+                <button>View Admin Leaderboard</button>
+              </Link>
+              <Link to="/admin/knowledgebase" style={{ marginLeft: "10px" }}>
+                <button>Manage Knowledge Base</button>
               </Link>
             </div>
-          </div>
-        </div>
-
-        <div className="window" style={{ width: "100%", marginTop: "20px" }}>
-          <div className="title-bar">
-            <div className="title-bar-text">Ticket Categories</div>
-          </div>
-          <div className="window-body">
-            <div className="sunken-panel">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Count</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats &&
-                    formatCategoryStats(stats.categoryStats).map((item) => (
-                      <tr key={item._id}>
-                        <td>{item._id}</td>
-                        <td>{item.count}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div className="field-row" style={{ marginTop: "20px" }}>
-          <Link to="/admin/leaderboard">
-            <button>View Admin Leaderboard</button>
-          </Link>
-          <Link to="/admin/knowledgebase" style={{ marginLeft: "10px" }}>
-            <button>Manage Knowledge Base</button>
-          </Link>
-        </div>
+          </>
+        )}
       </div>
       <div className="status-bar">
         <p className="status-bar-field">Admin Dashboard</p>

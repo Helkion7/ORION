@@ -1,6 +1,11 @@
 import api from "./api";
 
-export const getUsers = async (params) => {
+export const getUsers = async (params = {}) => {
+  // Handle array parameters for role filter
+  if (params.role && Array.isArray(params.role)) {
+    // Convert array to comma-separated string for query params
+    params.role = params.role.join(",");
+  }
   const response = await api.get("/users", { params });
   return response.data;
 };
@@ -10,8 +15,8 @@ export const getUser = async (id) => {
   return response.data;
 };
 
-export const updateUser = async (id, userData) => {
-  const response = await api.put(`/users/${id}`, userData);
+export const updateUser = async (userId, userData) => {
+  const response = await api.put(`/users/${userId}`, userData);
   return response.data;
 };
 

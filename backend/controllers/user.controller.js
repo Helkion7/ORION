@@ -6,7 +6,21 @@ const { validationResult } = require("express-validator");
 // @access  Private/Admin
 exports.getUsers = async (req, res, next) => {
   try {
-    const users = await User.find();
+    // Handle role filtering for single or multiple roles
+    let query = {};
+
+    if (req.query.role) {
+      if (req.query.role.includes(",")) {
+        // Convert comma-separated string to array for OR query
+        const roles = req.query.role.split(",");
+        query.role = { $in: roles };
+      } else {
+        query.role = req.query.role;
+      }
+    }
+
+    // Get users based on query
+    const users = await User.find(query).select("-password").sort("name");
 
     res.status(200).json({
       success: true,
@@ -54,42 +68,56 @@ exports.getUser = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateUser = async (req, res, next) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
+    // Only allow admins to update user roles
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to update users",
+      });
     }
 
-    // Prevent password update through this route
-    if (req.body.password) {
-      delete req.body.password;
-    }
-
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    // Find the user by ID
+    const user = await User.findById(req.params.id);
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: `User not found with id of ${req.params.id}`,
+        error: "User not found",
       });
+    }
+
+    // Only allow updating role for now
+    if (req.body.role) {
+      // Validate that the role is one of the allowed values
+      const allowedRoles = [
+        "user",
+        "admin",
+        "firstLineSupport",
+        "secondLineSupport",
+      ];
+      if (!allowedRoles.includes(req.body.role)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid role specified",
+        });
+      }
+
+      user.role = req.body.role;
+      await user.save();
     }
 
     res.status(200).json({
       success: true,
-      data: user,
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
     });
   } catch (error) {
-    // Check if error is a valid MongoDB ObjectId
-    if (error.name === "CastError") {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid user ID format",
-      });
-    }
-
     next(error);
   }
 };

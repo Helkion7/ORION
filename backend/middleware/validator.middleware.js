@@ -141,8 +141,12 @@ exports.validateUpdateTicket = [
         throw new Error("Assigned user not found");
       }
 
-      if (user.role !== "admin") {
-        throw new Error("Tickets can only be assigned to admin users");
+      if (
+        user.role !== "admin" &&
+        user.role !== "firstLineSupport" &&
+        user.role !== "secondLineSupport"
+      ) {
+        throw new Error("Tickets can only be assigned to support staff");
       }
 
       return true;

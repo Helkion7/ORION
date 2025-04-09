@@ -269,8 +269,13 @@ exports.updateTicket = async (req, res, next) => {
       });
     }
 
-    // Check if user owns the ticket or is admin
-    if (ticket.user.toString() !== req.user.id && req.user.role !== "admin") {
+    // Check if user owns the ticket or is support staff
+    if (
+      ticket.user.toString() !== req.user.id &&
+      !["admin", "firstLineSupport", "secondLineSupport"].includes(
+        req.user.role
+      )
+    ) {
       return res.status(403).json({
         success: false,
         error: "Not authorized to update this ticket",
@@ -278,27 +283,124 @@ exports.updateTicket = async (req, res, next) => {
     }
 
     // Validate assignedTo if present
-    if (req.body.assignedTo && req.body.assignedTo !== "") {
-      // Fetch the user to check their role
-      const User = require("../models/User");
-      const assignedUser = await User.findById(req.body.assignedTo);
-
+    if ("assignedTo" in req.body) {
+      // If null, undefined, or empty string, set to null (unassigned)
       if (
-        !assignedUser ||
-        (assignedUser.role !== "admin" &&
-          assignedUser.role !== "firstLineSupport" &&
-          assignedUser.role !== "secondLineSupport")
+        req.body.assignedTo === null ||
+        req.body.assignedTo === undefined ||
+        req.body.assignedTo === ""
       ) {
-        return res.status(400).json({
-          success: false,
-          error: "Tickets can only be assigned to support staff",
+        req.body.assignedTo = null;
+      } else {
+        // Otherwise check if it's a valid user ID
+        const User = require("../models/User");
+        const assignedUser = await User.findById(req.body.assignedTo);
+
+        if (!assignedUser) {
+          return res.status(400).json({
+            success: false,
+            error: "Assigned user not found",
+          });
+        }
+
+        if (
+          !["admin", "firstLineSupport", "secondLineSupport"].includes(
+            assignedUser.role
+          )
+        ) {
+          return res.status(400).json({
+            success: false,
+            error: "Tickets can only be assigned to support staff",
+          });
+        }
+
+        // Add to assignment history if changed
+        if (
+          !ticket.assignedTo ||
+          ticket.assignedTo.toString() !== req.body.assignedTo
+        ) {
+          ticket.assignmentHistory.push({
+            assignedTo: req.body.assignedTo,
+            assignedBy: req.user.id,
+            supportLevel:
+              assignedUser.role === "secondLineSupport"
+                ? "secondLine"
+                : "firstLine",
+            assignedAt: new Date(),
+          });
+        }
+      }
+    }
+
+    // Handle status changes and add to status history
+    if (req.body.status && req.body.status !== ticket.status) {
+      ticket.statusHistory.push({
+        status: req.body.status,
+        updatedBy: req.user.id,
+        updatedAt: new Date(),
+      });
+
+      // If marking as completed, set the completedAt time
+      if (req.body.status === "completed" && ticket.status !== "completed") {
+        req.body.completedAt = new Date();
+      }
+
+      // If reopening, clear completedAt
+      if (req.body.status !== "completed" && ticket.status === "completed") {
+        req.body.completedAt = null;
+      }
+    }
+
+    // Handle escalation to second line
+    if (
+      req.body.supportLevel === "secondLine" &&
+      ticket.supportLevel !== "secondLine"
+    ) {
+      req.body.escalatedFrom = req.user.id;
+      req.body.escalatedAt = new Date();
+
+      // Add internal note about escalation if not already provided
+      if (!req.body.escalationNote) {
+        ticket.responses.push({
+          text: `Escalated to Second Line Support by ${req.user.name}`,
+          respondedBy: req.user.id,
+          isInternal: true,
         });
       }
     }
 
-    // Regular users can only update certain fields if they own the ticket
-    if (req.user.role !== "admin") {
-      // Only allow users to update title, description, and category
+    // Handle needs development flag
+    if (
+      req.body.devWorkRequired !== undefined &&
+      // Only second line or admin can mark development work
+      (req.user.role === "secondLineSupport" || req.user.role === "admin")
+    ) {
+      ticket.devWorkRequired = req.body.devWorkRequired;
+    }
+
+    // Role-based restrictions on what can be updated
+    if (req.user.role === "firstLineSupport") {
+      // First line can't directly assign to second line without escalation
+      if (req.body.assignedTo) {
+        const User = require("../.models/User");
+        const assignedUser = await User.findById(req.body.assignedTo);
+        if (
+          assignedUser &&
+          assignedUser.role === "secondLineSupport" &&
+          req.body.supportLevel !== "secondLine"
+        ) {
+          return res.status(403).json({
+            success: false,
+            error:
+              "First Line Support must escalate tickets to Second Line Support",
+          });
+        }
+      }
+    }
+
+    // Regular users (non-support staff) can only update certain fields
+    if (req.user.role === "user") {
+      // Only allow users to update title, description, and category of their own tickets
       const allowedUpdates = ["title", "description", "category"];
       const requestedUpdates = Object.keys(req.body);
 
@@ -315,8 +417,9 @@ exports.updateTicket = async (req, res, next) => {
       }
     }
 
-    // Update ticket
-    ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
+    // Update ticket with filtered/validated fields
+    const updateData = { ...req.body };
+    ticket = await Ticket.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     }).populate([
@@ -326,10 +429,22 @@ exports.updateTicket = async (req, res, next) => {
       },
       {
         path: "assignedTo",
-        select: "name email",
+        select: "name email role",
       },
       {
         path: "responses.respondedBy",
+        select: "name email role",
+      },
+      {
+        path: "assignmentHistory.assignedTo",
+        select: "name email role",
+      },
+      {
+        path: "assignmentHistory.assignedBy",
+        select: "name email role",
+      },
+      {
+        path: "statusHistory.updatedBy",
         select: "name email role",
       },
     ]);
@@ -352,6 +467,218 @@ exports.updateTicket = async (req, res, next) => {
         error: "Invalid ticket ID format",
       });
     }
+    next(error);
+  }
+};
+
+// @desc    Escalate ticket to second line support
+// @route   PUT /api/tickets/:id/escalate
+// @access  Private
+exports.escalateTicket = async (req, res, next) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        error: `Ticket not found with id ${req.params.id}`,
+      });
+    }
+
+    // Only first line support and admins can escalate
+    if (!["firstLineSupport", "admin"].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to escalate tickets",
+      });
+    }
+
+    // Cannot escalate already second line tickets
+    if (ticket.supportLevel === "secondLine") {
+      return res.status(400).json({
+        success: false,
+        error: "Ticket is already at second line support",
+      });
+    }
+
+    // Update ticket with escalation data
+    const escalationNote =
+      req.body.escalationNote || "Escalated to Second Line Support";
+
+    ticket.supportLevel = "secondLine";
+    ticket.escalatedFrom = req.user.id;
+    ticket.escalatedAt = new Date();
+
+    // Add internal note about escalation
+    ticket.responses.push({
+      text: `${escalationNote} by ${req.user.name}`,
+      respondedBy: req.user.id,
+      isInternal: true,
+    });
+
+    // If ticket was in open status, mark it as in progress
+    if (ticket.status === "open") {
+      ticket.status = "in progress";
+      ticket.statusHistory.push({
+        status: "in progress",
+        updatedBy: req.user.id,
+        updatedAt: new Date(),
+      });
+    }
+
+    await ticket.save();
+
+    // Get the fully populated ticket to return
+    const updatedTicket = await Ticket.findById(req.params.id).populate([
+      {
+        path: "user",
+        select: "name email",
+      },
+      {
+        path: "assignedTo",
+        select: "name email role",
+      },
+      {
+        path: "responses.respondedBy",
+        select: "name email role",
+      },
+      {
+        path: "assignmentHistory.assignedTo",
+        select: "name email role",
+      },
+      {
+        path: "assignmentHistory.assignedBy",
+        select: "name email role",
+      },
+      {
+        path: "statusHistory.updatedBy",
+        select: "name email role",
+      },
+    ]);
+
+    // Emit socket event for updated ticket
+    const io = req.app.get("io");
+    io.emit("updateTicket", {
+      ticket: updatedTicket,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedTicket,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Return ticket to first line support
+// @route   PUT /api/tickets/:id/returnToFirstLine
+// @access  Private
+exports.returnToFirstLine = async (req, res, next) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        error: `Ticket not found with id ${req.params.id}`,
+      });
+    }
+
+    // Only second line support and admins can return tickets
+    if (!["secondLineSupport", "admin"].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to return tickets to first line",
+      });
+    }
+
+    // Cannot return first line tickets
+    if (ticket.supportLevel !== "secondLine") {
+      return res.status(400).json({
+        success: false,
+        error: "Ticket is already at first line support",
+      });
+    }
+
+    // Update ticket with return data
+    const returnNote =
+      req.body.returnNote || "Returned to First Line Support with instructions";
+
+    ticket.supportLevel = "firstLine";
+
+    // Add internal note about return
+    ticket.responses.push({
+      text: `${returnNote} by ${req.user.name}`,
+      respondedBy: req.user.id,
+      isInternal: true,
+    });
+
+    // If an assignee is specified, assign to that first line support agent
+    if (req.body.assignToId) {
+      const User = require("../models/User");
+      const assignee = await User.findById(req.body.assignToId);
+
+      if (!assignee || assignee.role !== "firstLineSupport") {
+        return res.status(400).json({
+          success: false,
+          error: "Can only reassign to a First Line Support agent",
+        });
+      }
+
+      ticket.assignedTo = req.body.assignToId;
+      ticket.assignmentHistory.push({
+        assignedTo: req.body.assignToId,
+        assignedBy: req.user.id,
+        supportLevel: "firstLine",
+        assignedAt: new Date(),
+      });
+    } else {
+      // If no specific assignee, unassign the ticket
+      ticket.assignedTo = null;
+    }
+
+    await ticket.save();
+
+    // Get the fully populated ticket to return
+    const updatedTicket = await Ticket.findById(req.params.id).populate([
+      {
+        path: "user",
+        select: "name email",
+      },
+      {
+        path: "assignedTo",
+        select: "name email role",
+      },
+      {
+        path: "responses.respondedBy",
+        select: "name email role",
+      },
+      {
+        path: "assignmentHistory.assignedTo",
+        select: "name email role",
+      },
+      {
+        path: "assignmentHistory.assignedBy",
+        select: "name email role",
+      },
+      {
+        path: "statusHistory.updatedBy",
+        select: "name email role",
+      },
+    ]);
+
+    // Emit socket event for updated ticket
+    const io = req.app.get("io");
+    io.emit("updateTicket", {
+      ticket: updatedTicket,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedTicket,
+    });
+  } catch (error) {
     next(error);
   }
 };

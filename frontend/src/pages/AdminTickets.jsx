@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getTickets } from "../services/ticketService";
 import { useSocket } from "../contexts/SocketContext";
 import LoadingIndicator from "../components/LoadingIndicator";
+import TicketStatusBadge from "../components/TicketStatusBadge";
+import SupportLevelBadge from "../components/SupportLevelBadge";
 
 const AdminTickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -15,6 +17,7 @@ const AdminTickets = () => {
     priority: "all",
     category: "all",
     role: "all",
+    supportLevel: "all",
     searchTerm: "",
   });
   const [sortField, setSortField] = useState("createdAt");
@@ -128,6 +131,10 @@ const AdminTickets = () => {
         params.role = filters.role;
       }
 
+      if (filters.supportLevel !== "all") {
+        params.supportLevel = filters.supportLevel;
+      }
+
       if (filters.searchTerm) {
         params.search = filters.searchTerm;
       }
@@ -213,7 +220,10 @@ const AdminTickets = () => {
                 <option value="all">All</option>
                 <option value="open">Open</option>
                 <option value="in progress">In Progress</option>
-                <option value="solved">Solved</option>
+                <option value="resolved">Resolved</option>
+                <option value="completed">Completed</option>
+                <option value="needs development">Needs Development</option>
+                <option value="reopened">Reopened</option>
               </select>
             </div>
 
@@ -267,6 +277,20 @@ const AdminTickets = () => {
               </select>
             </div>
 
+            <div className="field-row">
+              <label htmlFor="supportLevel">Support Level:</label>
+              <select
+                id="supportLevel"
+                name="supportLevel"
+                value={filters.supportLevel}
+                onChange={handleFilterChange}
+              >
+                <option value="all">All</option>
+                <option value="firstLine">First Line</option>
+                <option value="secondLine">Second Line</option>
+              </select>
+            </div>
+
             <button onClick={fetchTickets}>Apply Filters</button>
             <button
               onClick={() => {
@@ -275,6 +299,7 @@ const AdminTickets = () => {
                   priority: "all",
                   category: "all",
                   role: "all",
+                  supportLevel: "all",
                   searchTerm: "",
                 });
                 setPage(1);
@@ -335,6 +360,12 @@ const AdminTickets = () => {
                     Status
                   </th>
                   <th
+                    onClick={() => handleSort("supportLevel")}
+                    className={getSortClass("supportLevel")}
+                  >
+                    Level
+                  </th>
+                  <th
                     onClick={() => handleSort("priority")}
                     className={getSortClass("priority")}
                   >
@@ -365,14 +396,12 @@ const AdminTickets = () => {
                     <td>{ticket.title}</td>
                     <td>{ticket.category}</td>
                     <td>
-                      <span
-                        className={`status-badge status-${ticket.status.replace(
-                          " ",
-                          "-"
-                        )}`}
-                      >
-                        {ticket.status}
-                      </span>
+                      <TicketStatusBadge status={ticket.status} />
+                    </td>
+                    <td>
+                      <SupportLevelBadge
+                        level={ticket.supportLevel || "firstLine"}
+                      />
                     </td>
                     <td className={`priority-${ticket.priority}`}>
                       {ticket.priority}

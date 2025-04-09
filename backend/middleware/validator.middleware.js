@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 // Validation middleware for register route
 exports.validateRegister = [
@@ -102,6 +102,8 @@ exports.validateCreateTicket = [
 
 // Validation middleware for updating tickets
 exports.validateUpdateTicket = [
+  param("id").isMongoId().withMessage("Invalid ticket ID format"),
+
   body("title")
     .optional()
     .trim()
@@ -111,8 +113,8 @@ exports.validateUpdateTicket = [
   body("description")
     .optional()
     .trim()
-    .isLength({ min: 10, max: 2000 })
-    .withMessage("Description must be between 10 and 2000 characters"),
+    .isLength({ max: 2000 })
+    .withMessage("Description cannot be more than 2000 characters"),
 
   body("category")
     .optional()
@@ -121,7 +123,14 @@ exports.validateUpdateTicket = [
 
   body("status")
     .optional()
-    .isIn(["open", "in progress", "solved"])
+    .isIn([
+      "open",
+      "in progress",
+      "resolved",
+      "completed",
+      "needs development",
+      "reopened",
+    ])
     .withMessage("Please select a valid status"),
 
   body("priority")
@@ -129,28 +138,52 @@ exports.validateUpdateTicket = [
     .isIn(["low", "medium", "high", "urgent"])
     .withMessage("Please select a valid priority"),
 
+  body("supportLevel")
+    .optional()
+    .isIn(["firstLine", "secondLine"])
+    .withMessage("Invalid support level"),
+
   body("assignedTo")
     .optional()
     .custom(async (value, { req }) => {
-      if (value === "") return true;
-
-      const User = require("../models/User");
-      const user = await User.findById(value);
-
-      if (!user) {
-        throw new Error("Assigned user not found");
+      // Allow null, undefined, or empty string to unassign a ticket
+      if (value === null || value === undefined || value === "") {
+        return true;
       }
 
-      if (
-        user.role !== "admin" &&
-        user.role !== "firstLineSupport" &&
-        user.role !== "secondLineSupport"
-      ) {
-        throw new Error("Tickets can only be assigned to support staff");
-      }
+      try {
+        const User = require("../models/User");
+        const user = await User.findById(value);
 
-      return true;
+        if (!user) {
+          throw new Error("Assigned user not found");
+        }
+
+        // Check role permissions
+        if (
+          user.role !== "admin" &&
+          user.role !== "firstLineSupport" &&
+          user.role !== "secondLineSupport"
+        ) {
+          throw new Error("Tickets can only be assigned to support staff");
+        }
+
+        return true;
+      } catch (err) {
+        if (
+          err.message === "Assigned user not found" ||
+          err.message === "Tickets can only be assigned to support staff"
+        ) {
+          throw err;
+        }
+        throw new Error("Invalid user ID format");
+      }
     }),
+
+  body("devWorkRequired")
+    .optional()
+    .isBoolean()
+    .withMessage("Dev work required must be a boolean value"),
 ];
 
 // Validation middleware for adding responses to tickets
@@ -191,4 +224,46 @@ exports.validateKnowledgeBase = [
     .withMessage("Please select a valid category"),
 
   body("tags").optional().isArray().withMessage("Tags must be an array"),
+];
+
+// Validation for escalating a ticket to second line
+exports.validateEscalateTicket = [
+  param("id").isMongoId().withMessage("Invalid ticket ID format"),
+  body("escalationNote")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Escalation note cannot be more than 500 characters"),
+];
+
+// Validation for returning a ticket to first line
+exports.validateReturnTicket = [
+  param("id").isMongoId().withMessage("Invalid ticket ID format"),
+  body("returnNote")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Return note cannot be more than 500 characters"),
+  body("assignToId")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid user ID format")
+    .custom(async (value) => {
+      if (!value) return true;
+
+      const User = require("../models/User");
+      const user = await User.findById(value);
+
+      if (!user) {
+        throw new Error("Assigned user not found");
+      }
+
+      if (user.role !== "firstLineSupport") {
+        throw new Error("Can only assign to First Line Support");
+      }
+
+      return true;
+    }),
 ];

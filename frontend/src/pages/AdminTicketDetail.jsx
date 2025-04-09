@@ -4,6 +4,8 @@ import {
   getTicketById,
   updateTicket,
   addResponse,
+  escalateTicket as escalateTicketService,
+  returnToFirstLine as returnToFirstLineService,
 } from "../services/ticketService";
 import { getUsers } from "../services/userService";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,11 +27,18 @@ const AdminTicketDetail = () => {
   const [isInternal, setIsInternal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [escalationNote, setEscalationNote] = useState("");
+  const [returnNote, setReturnNote] = useState("");
+  const [showEscalateForm, setShowEscalateForm] = useState(false);
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [firstLineStaff, setFirstLineStaff] = useState([]);
+  const [selectedFirstLineStaff, setSelectedFirstLineStaff] = useState("");
 
   const [ticketUpdate, setTicketUpdate] = useState({
     status: "",
     priority: "",
     assignedTo: "",
+    devWorkRequired: false,
   });
 
   useEffect(() => {
@@ -47,6 +56,7 @@ const AdminTicketDetail = () => {
           status: data.ticket.status,
           priority: data.ticket.priority,
           assignedTo: data.ticket.assignedTo?._id || "",
+          devWorkRequired: data.ticket.devWorkRequired || false,
         });
       }
     };
@@ -69,6 +79,7 @@ const AdminTicketDetail = () => {
         status: result.data.status,
         priority: result.data.priority,
         assignedTo: result.data.assignedTo?._id || "",
+        devWorkRequired: result.data.devWorkRequired || false,
       });
     } catch (err) {
       setError("Failed to load ticket details");
@@ -85,6 +96,12 @@ const AdminTicketDetail = () => {
       });
       if (response && response.data) {
         setUsers(response.data);
+
+        // Filter for first line staff
+        const firstLine = response.data.filter(
+          (u) => u.role === "firstLineSupport"
+        );
+        setFirstLineStaff(firstLine);
       } else {
         console.error("Unexpected response format from getUsers");
         setUsers([]);
@@ -96,15 +113,37 @@ const AdminTicketDetail = () => {
   };
 
   const handleUpdateTicket = async (e) => {
-    e.preventDefault();
+    e && e.preventDefault();
     try {
       setSubmitting(true);
-      await updateTicket(id, ticketUpdate);
+      setError(null);
+
+      // Create a clean update object with only defined values
+      const updateData = {};
+
+      // Only include fields that have been changed
+      if (ticketUpdate.status) updateData.status = ticketUpdate.status;
+      if (ticketUpdate.priority) updateData.priority = ticketUpdate.priority;
+
+      // Handle assignedTo specially - empty string should be explicitly included
+      // to allow unassigning
+      updateData.assignedTo = ticketUpdate.assignedTo;
+
+      // Include dev work required flag if it's defined
+      if (ticketUpdate.devWorkRequired !== undefined) {
+        updateData.devWorkRequired = ticketUpdate.devWorkRequired;
+      }
+
+      await updateTicket(id, updateData);
       await fetchTicket();
       setEditing(false);
     } catch (err) {
-      setError("Failed to update ticket");
       console.error(err);
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.errors?.[0]?.msg ||
+          "Failed to update ticket"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -123,6 +162,44 @@ const AdminTicketDetail = () => {
       setError("Failed to submit response");
       console.error(err);
       await fetchTicket();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEscalate = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      await escalateTicketService(id, {
+        escalationNote: escalationNote,
+      });
+      setShowEscalateForm(false);
+      setEscalationNote("");
+      await fetchTicket();
+    } catch (err) {
+      setError("Failed to escalate ticket");
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReturnToFirstLine = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      await returnToFirstLineService(id, {
+        returnNote: returnNote,
+        assignToId: selectedFirstLineStaff || undefined,
+      });
+      setShowReturnForm(false);
+      setReturnNote("");
+      setSelectedFirstLineStaff("");
+      await fetchTicket();
+    } catch (err) {
+      setError("Failed to return ticket to first line");
+      console.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -167,6 +244,198 @@ const AdminTicketDetail = () => {
       </div>
     );
   }
+
+  const renderWorkflowActions = () => {
+    if (!ticket) return null;
+
+    return (
+      <div className="workflow-actions" style={{ marginTop: "15px" }}>
+        <fieldset>
+          <legend>Workflow Actions</legend>
+
+          {/* First line support can escalate to second line */}
+          {user.role === "firstLineSupport" &&
+            ticket.supportLevel === "firstLine" && (
+              <div>
+                {!showEscalateForm ? (
+                  <button
+                    onClick={() => setShowEscalateForm(true)}
+                    style={{ marginRight: "10px" }}
+                  >
+                    Escalate to Second Line
+                  </button>
+                ) : (
+                  <form onSubmit={handleEscalate}>
+                    <div
+                      className="field-row-stacked"
+                      style={{ width: "100%" }}
+                    >
+                      <label htmlFor="escalationNote">Escalation Note</label>
+                      <textarea
+                        id="escalationNote"
+                        rows="3"
+                        value={escalationNote}
+                        onChange={(e) => setEscalationNote(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="button-row">
+                      <button
+                        type="button"
+                        onClick={() => setShowEscalateForm(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting || !escalationNote.trim()}
+                      >
+                        Confirm Escalation
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+
+          {/* Second line support can return to first line */}
+          {user.role === "secondLineSupport" &&
+            ticket.supportLevel === "secondLine" && (
+              <div>
+                {!showReturnForm ? (
+                  <button
+                    onClick={() => setShowReturnForm(true)}
+                    style={{ marginRight: "10px" }}
+                  >
+                    Return to First Line
+                  </button>
+                ) : (
+                  <form onSubmit={handleReturnToFirstLine}>
+                    <div
+                      className="field-row-stacked"
+                      style={{ width: "100%" }}
+                    >
+                      <label htmlFor="returnNote">
+                        Instructions for First Line
+                      </label>
+                      <textarea
+                        id="returnNote"
+                        rows="3"
+                        value={returnNote}
+                        onChange={(e) => setReturnNote(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="field-row">
+                      <label htmlFor="selectedAgent">
+                        Assign to First Line Agent (Optional)
+                      </label>
+                      <select
+                        id="selectedAgent"
+                        value={selectedFirstLineStaff}
+                        onChange={(e) =>
+                          setSelectedFirstLineStaff(e.target.value)
+                        }
+                      >
+                        <option value="">Unassigned</option>
+                        {firstLineStaff.map((staff) => (
+                          <option key={staff._id} value={staff._id}>
+                            {staff.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="button-row">
+                      <button
+                        type="button"
+                        onClick={() => setShowReturnForm(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting || !returnNote.trim()}
+                      >
+                        Return with Instructions
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+
+          {/* For second line: Mark as needs development */}
+          {user.role === "secondLineSupport" && (
+            <div style={{ marginTop: "10px" }}>
+              <div className="field-row">
+                <input
+                  id="dev-work-checkbox"
+                  type="checkbox"
+                  checked={ticketUpdate.devWorkRequired || false}
+                  onChange={(e) =>
+                    setTicketUpdate((prev) => ({
+                      ...prev,
+                      devWorkRequired: e.target.checked,
+                    }))
+                  }
+                />
+                <label htmlFor="dev-work-checkbox">
+                  Requires development work
+                </label>
+              </div>
+              {ticketUpdate.devWorkRequired && (
+                <button onClick={handleUpdateTicket} disabled={submitting}>
+                  Update Development Status
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Admin can do everything */}
+          {user.role === "admin" && (
+            <div>
+              {ticket.supportLevel === "firstLine" && !showEscalateForm && (
+                <button
+                  onClick={() => setShowEscalateForm(true)}
+                  style={{ marginRight: "10px" }}
+                >
+                  Escalate to Second Line
+                </button>
+              )}
+
+              {ticket.supportLevel === "secondLine" && !showReturnForm && (
+                <button
+                  onClick={() => setShowReturnForm(true)}
+                  style={{ marginRight: "10px" }}
+                >
+                  Return to First Line
+                </button>
+              )}
+
+              <div style={{ marginTop: "10px" }}>
+                <div className="field-row">
+                  <input
+                    id="dev-work-checkbox"
+                    type="checkbox"
+                    checked={ticketUpdate.devWorkRequired || false}
+                    onChange={(e) =>
+                      setTicketUpdate((prev) => ({
+                        ...prev,
+                        devWorkRequired: e.target.checked,
+                      }))
+                    }
+                  />
+                  <label htmlFor="dev-work-checkbox">
+                    Requires development work
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+        </fieldset>
+      </div>
+    );
+  };
 
   return (
     <div className="window" style={{ width: "100%" }}>
@@ -245,6 +514,16 @@ const AdminTicketDetail = () => {
                       <strong>Assigned To:</strong>{" "}
                       {ticket.assignedTo?.name || "Unassigned"}
                     </div>
+                    <div>
+                      <strong>Support Level:</strong>{" "}
+                      {ticket.supportLevel === "firstLine"
+                        ? "First Line"
+                        : "Second Line"}
+                    </div>
+                    <div>
+                      <strong>Dev Work Required:</strong>{" "}
+                      {ticket.devWorkRequired ? "Yes" : "No"}
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleUpdateTicket}>
@@ -266,7 +545,12 @@ const AdminTicketDetail = () => {
                         >
                           <option value="open">Open</option>
                           <option value="in progress">In Progress</option>
-                          <option value="solved">Solved</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="completed">Completed</option>
+                          <option value="needs development">
+                            Needs Development
+                          </option>
+                          <option value="reopened">Reopened</option>
                         </select>
                       </div>
 
@@ -319,6 +603,8 @@ const AdminTicketDetail = () => {
                     </div>
                   </form>
                 )}
+
+                {renderWorkflowActions()}
 
                 <fieldset>
                   <legend>Description</legend>

@@ -21,13 +21,34 @@ const TicketSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["open", "in progress", "solved"],
+      enum: [
+        "open",
+        "in progress",
+        "resolved",
+        "completed",
+        "needs development",
+        "reopened",
+      ],
       default: "open",
     },
     priority: {
       type: String,
       enum: ["low", "medium", "high", "urgent"],
       default: "medium",
+    },
+    supportLevel: {
+      type: String,
+      enum: ["firstLine", "secondLine"],
+      default: "firstLine",
+    },
+    escalatedFrom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    escalatedAt: {
+      type: Date,
+      default: null,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -62,6 +83,57 @@ const TicketSchema = new mongoose.Schema(
         },
       },
     ],
+    assignmentHistory: [
+      {
+        assignedTo: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        assignedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        supportLevel: {
+          type: String,
+          enum: ["firstLine", "secondLine"],
+        },
+        assignedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: [
+            "open",
+            "in progress",
+            "resolved",
+            "completed",
+            "needs development",
+            "reopened",
+          ],
+        },
+        updatedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        updatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    devWorkRequired: {
+      type: Boolean,
+      default: false,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -70,5 +142,7 @@ const TicketSchema = new mongoose.Schema(
 TicketSchema.index({ user: 1, status: 1 });
 TicketSchema.index({ status: 1, createdAt: -1 });
 TicketSchema.index({ category: 1 });
+TicketSchema.index({ supportLevel: 1, status: 1 });
+TicketSchema.index({ assignedTo: 1, status: 1 });
 
 module.exports = mongoose.model("Ticket", TicketSchema);

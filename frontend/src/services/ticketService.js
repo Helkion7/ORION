@@ -16,8 +16,28 @@ export const createTicket = async (ticketData) => {
 };
 
 export const updateTicket = async (id, ticketData) => {
-  const response = await api.put(`/tickets/${id}`, ticketData);
-  return response.data;
+  try {
+    // Ensure assignedTo is a string or null/undefined
+    if (ticketData.assignedTo === "") {
+      ticketData.assignedTo = null;
+    }
+
+    // Clean up undefined values to avoid validation issues
+    Object.keys(ticketData).forEach((key) => {
+      if (ticketData[key] === undefined) {
+        delete ticketData[key];
+      }
+    });
+
+    const response = await api.put(`/tickets/${id}`, ticketData);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error updating ticket:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
 };
 
 export const deleteTicket = async (id) => {
@@ -40,5 +60,21 @@ export const getTicketStats = async () => {
 
 export const getAdminLeaderboard = async () => {
   const response = await api.get("/tickets/leaderboard");
+  return response.data;
+};
+
+export const escalateTicket = async (ticketId, escalationData) => {
+  const response = await api.put(
+    `/tickets/${ticketId}/escalate`,
+    escalationData
+  );
+  return response.data;
+};
+
+export const returnToFirstLine = async (ticketId, returnData) => {
+  const response = await api.put(
+    `/tickets/${ticketId}/returnToFirstLine`,
+    returnData
+  );
   return response.data;
 };

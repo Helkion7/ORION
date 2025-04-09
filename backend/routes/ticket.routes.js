@@ -11,6 +11,8 @@ const {
   addResponse,
   getTicketStats,
   getAdminLeaderboard,
+  escalateTicket,
+  returnToFirstLine,
 } = require("../controllers/ticket.controller");
 
 // Import middleware
@@ -19,6 +21,8 @@ const {
   validateCreateTicket,
   validateUpdateTicket,
   validateAddResponse,
+  validateEscalateTicket,
+  validateReturnTicket,
 } = require("../middleware/validator.middleware");
 const {
   sanitizeBody,
@@ -61,11 +65,33 @@ router
   .route("/:id")
   .get(sanitizeParams, getTicket) // Apply sanitization to params
   .put(validateUpdateTicket, sanitizeBody, sanitizeParams, updateTicket) // Apply sanitization to body and params
-  .delete(sanitizeParams, deleteTicket); // Apply sanitization to params
+  .delete(sanitizeParams, authorize("admin"), deleteTicket); // Only admins can delete tickets
 
 // Add response to ticket
 router
   .route("/:id/responses")
   .post(validateAddResponse, sanitizeBody, sanitizeParams, addResponse); // Apply sanitization to body and params
+
+// Escalate ticket to second line (first line and admin only)
+router
+  .route("/:id/escalate")
+  .put(
+    authorize(["firstLineSupport", "admin"]),
+    validateEscalateTicket,
+    sanitizeBody,
+    sanitizeParams,
+    escalateTicket
+  );
+
+// Return ticket to first line (second line and admin only)
+router
+  .route("/:id/returnToFirstLine")
+  .put(
+    authorize(["secondLineSupport", "admin"]),
+    validateReturnTicket,
+    sanitizeBody,
+    sanitizeParams,
+    returnToFirstLine
+  );
 
 module.exports = router;

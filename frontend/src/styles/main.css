@@ -1,0 +1,25 @@
+/* ...existing code... */
+
+/* Support Level Badge Styles */
+.support-level-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.support-level-badge.first-line {
+  background-color: #efefef;
+  border: 1px solid #808080;
+  color: #000;
+}
+
+.support-level-badge.second-line {
+  background-color: #000080;
+  border: 1px solid #0000aa;
+  color: #fff;
+}
+
+/* ...existing code... */

@@ -5,6 +5,8 @@ import { useSocket } from "../contexts/SocketContext";
 import LoadingIndicator from "../components/LoadingIndicator";
 import TicketStatusBadge from "../components/TicketStatusBadge";
 import SupportLevelBadge from "../components/SupportLevelBadge";
+import "../styles/search.css"; // Import search styles
+import SearchField from "../components/SearchField";
 
 const AdminTickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -22,6 +24,7 @@ const AdminTickets = () => {
   });
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const navigate = useNavigate();
   const socket = useSocket();
@@ -107,6 +110,7 @@ const AdminTickets = () => {
 
   const fetchTickets = async () => {
     setLoading(true);
+    setSearchLoading(true);
     try {
       // Set up filter params
       const params = {
@@ -136,17 +140,25 @@ const AdminTickets = () => {
       }
 
       if (filters.searchTerm) {
-        params.search = filters.searchTerm;
+        params.search = filters.searchTerm.trim();
+        console.log("Admin searching for:", filters.searchTerm.trim());
       }
 
       const result = await getTickets(params);
+      console.log("Admin search results:", result);
+
+      if (result.success === false) {
+        throw new Error(result.message || "Failed to search tickets");
+      }
+
       setTickets(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      setError("Failed to load tickets");
-      console.error(err);
+      console.error("Admin search error details:", err);
+      setError(`Failed to load tickets: ${err.message || "Unknown error"}`);
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -175,6 +187,15 @@ const AdminTickets = () => {
     setPage(1); // Reset to first page when changing sort
   };
 
+  const handleSearchSubmit = (term) => {
+    setFilters((prev) => ({ ...prev, searchTerm: term }));
+    setPage(1); // Reset to first page on new search
+    // We need a small delay to ensure state is updated before fetching
+    setTimeout(() => {
+      fetchTickets();
+    }, 0);
+  };
+
   // Helper to render sort indicator
   const getSortClass = (field) => {
     if (sortField !== field) return "";
@@ -196,16 +217,12 @@ const AdminTickets = () => {
             className="window-body"
             style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}
           >
-            <div className="field-row" style={{ flex: "1" }}>
-              <label htmlFor="searchTerm">Search:</label>
-              <input
-                id="searchTerm"
-                name="searchTerm"
-                type="text"
-                value={filters.searchTerm}
-                onChange={handleFilterChange}
-                placeholder="Search tickets..."
-                style={{ flex: "1" }}
+            <div style={{ flex: "1" }}>
+              <SearchField
+                onSearch={handleSearchSubmit}
+                initialValue={filters.searchTerm}
+                placeholder="Search in tickets, users, or content..."
+                loading={searchLoading}
               />
             </div>
 
@@ -415,6 +432,18 @@ const AdminTickets = () => {
           </div>
         )}
 
+        {filters.searchTerm && tickets.length === 0 && !loading && (
+          <div className="no-results">
+            <p>No tickets found matching "{filters.searchTerm}"</p>
+            <button
+              onClick={() => handleSearchSubmit("")}
+              className="small-button"
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
+
         {/* Pagination controls */}
         {!loading && tickets.length > 0 && (
           <div
@@ -446,6 +475,9 @@ const AdminTickets = () => {
           <p className="status-bar-field">
             Total in database: {pagination.total}
           </p>
+        )}
+        {filters.searchTerm && (
+          <p className="status-bar-field">Search: "{filters.searchTerm}"</p>
         )}
       </div>
     </div>

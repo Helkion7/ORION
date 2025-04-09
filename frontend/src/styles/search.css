@@ -1,0 +1,81 @@
+/* Styling for search components */
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.search-form label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.search-input-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+
+.search-form input[type="text"] {
+  flex: 1;
+  min-width: 150px;
+  width: 100%;
+  padding-right: 24px;
+}
+
+.search-form button {
+  white-space: nowrap;
+}
+
+.search-form .clear-search {
+  position: absolute;
+  right: 2px;
+  top: 1px;
+  bottom: 1px;
+  width: 22px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-form .clear-search:hover {
+  color: #000;
+}
+
+.search-results-info {
+  font-size: 0.9em;
+  margin-top: 8px;
+  color: #222222;
+  font-style: italic;
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: #222222;
+  background: #c0c0c0;
+  border: 1px solid #888;
+  box-shadow: inset 1px 1px 0px #dfdfdf, inset -1px -1px 0px #0a0a0a;
+  margin: 10px 0;
+}
+
+.search-highlight {
+  background-color: #ffff9e;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* When showing loading state */
+.search-form button:disabled {
+  color: #777;
+}

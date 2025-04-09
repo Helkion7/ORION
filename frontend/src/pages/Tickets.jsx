@@ -4,6 +4,8 @@ import { getTickets } from "../services/ticketService";
 import { useSocket } from "../contexts/SocketContext";
 import { useAuth } from "../contexts/AuthContext";
 import LoadingIndicator from "../components/LoadingIndicator";
+import "../styles/search.css"; // Import search styles
+import SearchField from "../components/SearchField";
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -14,6 +16,8 @@ const Tickets = () => {
   const [filter, setFilter] = useState("all"); // all, open, in progress, solved
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const navigate = useNavigate();
   const socket = useSocket();
@@ -79,6 +83,7 @@ const Tickets = () => {
 
   const fetchTickets = async () => {
     setLoading(true);
+    setSearchLoading(true);
     try {
       // Set up filter params
       const params = {
@@ -91,14 +96,27 @@ const Tickets = () => {
         params.status = filter;
       }
 
+      // Add search parameter if search term exists
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+        console.log("Searching for:", searchTerm.trim());
+      }
+
       const result = await getTickets(params);
+      console.log("Search results:", result);
+
+      if (result.success === false) {
+        throw new Error(result.message || "Failed to search tickets");
+      }
+
       setTickets(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      setError("Failed to load tickets");
-      console.error(err);
+      console.error("Search error details:", err);
+      setError(`Failed to load tickets: ${err.message || "Unknown error"}`);
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -123,6 +141,15 @@ const Tickets = () => {
     setPage(1); // Reset to first page when changing sort
   };
 
+  const handleSearchSubmit = (term) => {
+    setSearchTerm(term);
+    setPage(1); // Reset to first page on new search
+    // We use a small delay to ensure state is updated before fetching
+    setTimeout(() => {
+      fetchTickets();
+    }, 0);
+  };
+
   // Helper to render sort class
   const getSortClass = (field) => {
     if (sortField !== field) return "";
@@ -140,6 +167,8 @@ const Tickets = () => {
             display: "flex",
             justifyContent: "space-between",
             marginBottom: "15px",
+            flexWrap: "wrap",
+            gap: "10px",
           }}
         >
           <div className="field-row">
@@ -154,6 +183,15 @@ const Tickets = () => {
               <option value="in progress">In Progress</option>
               <option value="solved">Solved</option>
             </select>
+          </div>
+
+          <div style={{ flex: "1", marginLeft: "10px" }}>
+            <SearchField
+              onSearch={handleSearchSubmit}
+              initialValue={searchTerm}
+              placeholder="Search in tickets..."
+              loading={searchLoading}
+            />
           </div>
 
           <div>
@@ -271,6 +309,18 @@ const Tickets = () => {
           </div>
         )}
 
+        {searchTerm && tickets.length === 0 && !loading && (
+          <div className="no-results">
+            <p>No tickets found matching "{searchTerm}"</p>
+            <button
+              onClick={() => handleSearchSubmit("")}
+              className="small-button"
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
+
         {!loading && tickets.length > 0 && (
           <div
             style={{
@@ -296,10 +346,14 @@ const Tickets = () => {
         )}
       </div>
       <div className="status-bar">
-        <p className="status-bar-field">Total: {tickets.length} tickets</p>
+        <p className="status-bar-field">
+          Total: {pagination.total || tickets.length} tickets
+        </p>
+        {searchTerm && (
+          <p className="status-bar-field">Search: "{searchTerm}"</p>
+        )}
       </div>
     </div>
   );
 };
-
 export default Tickets;

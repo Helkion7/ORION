@@ -52,16 +52,6 @@ exports.getTickets = async (req, res, next) => {
       baseQuery.user = req.user.id;
     }
 
-    // Process search term
-    if (req.query.search) {
-      const searchRegex = new RegExp(req.query.search, "i");
-      baseQuery.$or = [
-        { title: searchRegex },
-        { description: searchRegex },
-        // We'll add user search through aggregation later
-      ];
-    }
-
     // Process role filter
     if (req.query.role) {
       if (req.query.role === "unassigned") {
@@ -79,7 +69,7 @@ exports.getTickets = async (req, res, next) => {
     }
 
     // Copy basic filter parameters
-    const filterParams = ["status", "priority", "category"];
+    const filterParams = ["status", "priority", "category", "supportLevel"];
     filterParams.forEach((param) => {
       if (req.query[param]) {
         baseQuery[param] = req.query[param];
@@ -94,66 +84,49 @@ exports.getTickets = async (req, res, next) => {
     // Sorting
     const sortParam = req.query.sort || "-createdAt";
 
-    // Execute query with aggregation for better search capabilities
-    const tickets = await Ticket.aggregate([
-      { $match: baseQuery },
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "userData",
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "assignedTo",
-          foreignField: "_id",
-          as: "assignedToData",
-        },
-      },
-      {
-        $addFields: {
-          user: { $arrayElemAt: ["$userData", 0] },
-          assignedTo: { $arrayElemAt: ["$assignedToData", 0] },
-        },
-      },
-      // Add search for user name/email if search term exists
-      ...(req.query.search
-        ? [
-            {
-              $match: {
-                $or: [
-                  { "user.name": new RegExp(req.query.search, "i") },
-                  { "user.email": new RegExp(req.query.search, "i") },
-                  { "assignedTo.name": new RegExp(req.query.search, "i") },
-                  { "assignedTo.email": new RegExp(req.query.search, "i") },
-                  // The baseQuery already has title and description
-                ],
-              },
-            },
-          ]
-        : []),
-      { $sort: parseSortString(sortParam) },
-      { $skip: skip },
-      { $limit: limit },
-      // Clean up temporary fields
-      {
-        $project: {
-          userData: 0,
-          assignedToData: 0,
-        },
-      },
-    ]);
+    // NEW APPROACH: Simplified search handling
+    // First find all tickets matching the base criteria
+    const allMatchingTickets = await Ticket.find(baseQuery)
+      .populate("user", "name email")
+      .populate("assignedTo", "name email role")
+      .populate("responses.respondedBy", "name email role")
+      .sort(parseSortString(sortParam));
 
-    // Get total count for pagination
-    const total = await Ticket.countDocuments(baseQuery);
+    // Then filter by search term if provided
+    let filteredTickets = allMatchingTickets;
 
-    // Pagination result
+    if (req.query.search && req.query.search.trim()) {
+      const searchTerm = req.query.search.trim();
+      const searchRegex = new RegExp(searchTerm, "i");
+
+      filteredTickets = allMatchingTickets.filter((ticket) => {
+        // Check various fields for matches
+        return (
+          searchRegex.test(ticket.title) ||
+          searchRegex.test(ticket.description) ||
+          searchRegex.test(ticket.category) ||
+          searchRegex.test(ticket._id.toString()) ||
+          (ticket.user &&
+            (searchRegex.test(ticket.user.name) ||
+              searchRegex.test(ticket.user.email))) ||
+          (ticket.assignedTo &&
+            (searchRegex.test(ticket.assignedTo.name) ||
+              searchRegex.test(ticket.assignedTo.email))) ||
+          ticket.responses.some((response) => searchRegex.test(response.text))
+        );
+      });
+    }
+
+    // Calculate total for pagination
+    const total = filteredTickets.length;
+
+    // Apply pagination to the filtered results
+    const paginatedTickets = filteredTickets.slice(skip, skip + limit);
+
+    // Create pagination info
     const pagination = {};
 
-    if (skip + tickets.length < total) {
+    if (skip + paginatedTickets.length < total) {
       pagination.next = {
         page: page + 1,
         limit,
@@ -167,15 +140,22 @@ exports.getTickets = async (req, res, next) => {
       };
     }
 
+    pagination.total = total;
+
     res.status(200).json({
       success: true,
-      count: tickets.length,
+      count: paginatedTickets.length,
       pagination,
       total,
-      data: tickets,
+      data: paginatedTickets,
     });
   } catch (error) {
-    next(error);
+    console.error("Search error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error searching tickets",
+      error: error.message,
+    });
   }
 };
 

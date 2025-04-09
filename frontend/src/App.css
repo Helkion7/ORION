@@ -1,0 +1,7 @@
+/* Add this to the existing CSS file */
+
+.small-button {
+  padding: 2px 8px;
+  margin-top: 5px;
+  font-size: 0.9em;
+}

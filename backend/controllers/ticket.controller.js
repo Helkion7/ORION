@@ -950,3 +950,132 @@ exports.getAdminLeaderboard = async (req, res, next) => {
     });
   }
 };
+
+// Get ticket timeline data
+exports.getTicketTimelineStats = async (req, res, next) => {
+  try {
+    // Get timeline of ticket creation
+    const timelineData = await Ticket.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+            day: { $dayOfMonth: "$createdAt" },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: {
+                $dateFromParts: {
+                  year: "$_id.year",
+                  month: "$_id.month",
+                  day: "$_id.day",
+                },
+              },
+            },
+          },
+          count: 1,
+        },
+      },
+    ]);
+
+    res.json({
+      success: true,
+      timelineData,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get support staff performance stats
+exports.getSupportStaffStats = async (req, res, next) => {
+  try {
+    // Get tickets assigned per support staff
+    const assignedTickets = await Ticket.aggregate([
+      {
+        $match: {
+          assignedTo: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assignedTo",
+          foreignField: "_id",
+          as: "assignedUser",
+        },
+      },
+      {
+        $unwind: "$assignedUser",
+      },
+      {
+        $group: {
+          _id: "$assignedTo",
+          name: { $first: "$assignedUser.name" },
+          ticketsAssigned: { $sum: 1 },
+          // Calculate average response time (hours between assignment and first response)
+          avgResponseTime: {
+            $avg: {
+              $cond: [
+                { $gt: [{ $size: "$responses" }, 0] },
+                {
+                  $divide: [
+                    {
+                      $subtract: [
+                        { $arrayElemAt: ["$responses.createdAt", 0] },
+                        "$updatedAt",
+                      ],
+                    },
+                    3600000, // Convert ms to hours
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+          ticketsSolved: {
+            $sum: { $cond: [{ $eq: ["$status", "solved"] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          ticketsAssigned: 1,
+          responseTime: { $abs: { $round: ["$avgResponseTime", 2] } }, // Convert to positive and round to 2 decimal places
+          ticketsSolved: 1,
+          solutionRate: {
+            $round: [
+              {
+                $multiply: [
+                  { $divide: ["$ticketsSolved", "$ticketsAssigned"] },
+                  100,
+                ],
+              },
+              1,
+            ],
+          },
+        },
+      },
+    ]);
+
+    res.json({
+      success: true,
+      supportStaffStats: assignedTickets,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

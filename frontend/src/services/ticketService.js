@@ -78,3 +78,13 @@ export const returnToFirstLine = async (ticketId, returnData) => {
   );
   return response.data;
 };
+
+export const getTicketTimelineStats = async () => {
+  const response = await api.get("/tickets/stats/timeline");
+  return response.data;
+};
+
+export const getSupportStaffStats = async () => {
+  const response = await api.get("/tickets/stats/support-staff");
+  return response.data;
+};

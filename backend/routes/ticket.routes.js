@@ -13,6 +13,8 @@ const {
   getAdminLeaderboard,
   escalateTicket,
   returnToFirstLine,
+  getTicketTimelineStats,
+  getSupportStaffStats,
 } = require("../controllers/ticket.controller");
 
 // Import middleware
@@ -93,5 +95,20 @@ router
     sanitizeParams,
     returnToFirstLine
   );
+
+// Add these new routes
+router.get(
+  "/stats/timeline",
+  protect,
+  authorize("admin", "support"),
+  getTicketTimelineStats
+);
+
+router.get(
+  "/stats/support-staff",
+  protect,
+  authorize("admin"),
+  getSupportStaffStats
+);
 
 module.exports = router;

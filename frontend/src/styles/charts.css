@@ -9,6 +9,29 @@
   position: relative;
 }
 
+.chart-container {
+  background-color: #ffffff;
+  border: 1px solid #000000;
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #ffffff,
+    inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+  padding: 10px;
+  margin-bottom: 16px;
+  width: 100%;
+  height: 100%;
+}
+
+.recharts-default-tooltip {
+  background-color: #c0c0c0 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #ffffff,
+    inset -2px -2px #808080, inset 2px 2px #dfdfdf !important;
+  padding: 8px !important;
+}
+
+.recharts-legend-item-text {
+  color: #000000 !important;
+}
+
 /* Apply Windows 98 style to chart tooltips */
 .chartjs-tooltip {
   font-family: "Pixelated MS Sans Serif", Arial, sans-serif;
@@ -18,4 +41,23 @@
   border-radius: 0;
   box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
   padding: 4px;
+}
+
+/* Custom tooltips */
+.custom-tooltip {
+  background-color: #c0c0c0;
+  border: 2px solid #000000;
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff,
+    inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+  padding: 8px;
+}
+
+.custom-tooltip-label {
+  color: #000000;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.custom-tooltip-value {
+  color: #000000;
 }

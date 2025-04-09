@@ -1,37 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getTicketStats, getTickets } from "../services/ticketService";
+import {
+  getTicketStats,
+  getTickets,
+  getTicketTimelineStats,
+  getSupportStaffStats,
+} from "../services/ticketService";
 import { getUsers } from "../services/userService";
 import { useSocket } from "../contexts/SocketContext";
 import LoadingIndicator from "../components/LoadingIndicator";
 import PromoteUserForm from "../components/PromoteUserForm";
-import { Bar, Pie, Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-} from "chart.js";
 import AdminStatistics from "../components/AdminStatistics";
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement
-);
+// Import chart components
+import {
+  TicketTimelineChart,
+  TicketStatusChart,
+  TicketPriorityChart,
+  SupportStaffChart,
+} from "../components/charts";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -41,11 +28,8 @@ const AdminDashboard = () => {
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
   const [users, setUsers] = useState([]);
-  const [ticketStats, setTicketStats] = useState({
-    byStatus: { labels: [], data: [] },
-    byPriority: { labels: [], data: [] },
-    byDay: { labels: [], data: [] },
-  });
+  const [timelineData, setTimelineData] = useState([]);
+  const [supportStaffData, setSupportStaffData] = useState([]);
 
   const navigate = useNavigate();
   const socket = useSocket();
@@ -65,9 +49,6 @@ const AdminDashboard = () => {
           sort: `${sortDirection === "desc" ? "-" : ""}${sortField}`,
         });
         setRecentTickets(ticketsResult.data);
-
-        // Process data for charts
-        processTicketStats(ticketsResult.data);
 
         // Fetch users
         const usersResult = await getUsers();
@@ -153,224 +134,29 @@ const AdminDashboard = () => {
     };
   }, [socket]);
 
-  const processTicketStats = (tickets) => {
-    // Process by status
-    const statusCounts = {};
-    tickets.forEach((ticket) => {
-      statusCounts[ticket.status] = (statusCounts[ticket.status] || 0) + 1;
-    });
-
-    // Process by priority
-    const priorityCounts = {};
-    tickets.forEach((ticket) => {
-      priorityCounts[ticket.priority] =
-        (priorityCounts[ticket.priority] || 0) + 1;
-    });
-
-    // Process by day (last 7 days)
-    const last7Days = [...Array(7)]
-      .map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toISOString().split("T")[0];
-      })
-      .reverse();
-
-    const ticketsByDay = {};
-    last7Days.forEach((day) => (ticketsByDay[day] = 0));
-
-    tickets.forEach((ticket) => {
-      const createdDate = new Date(ticket.createdAt)
-        .toISOString()
-        .split("T")[0];
-      if (ticketsByDay[createdDate] !== undefined) {
-        ticketsByDay[createdDate]++;
+  useEffect(() => {
+    const fetchTimelineData = async () => {
+      try {
+        const result = await getTicketTimelineStats();
+        setTimelineData(result.timelineData || []);
+      } catch (err) {
+        console.error("Error fetching timeline data:", err);
       }
-    });
+    };
 
-    setTicketStats({
-      byStatus: {
-        labels: Object.keys(statusCounts),
-        data: Object.values(statusCounts),
-      },
-      byPriority: {
-        labels: Object.keys(priorityCounts),
-        data: Object.values(priorityCounts),
-      },
-      byDay: {
-        labels: Object.keys(ticketsByDay),
-        data: Object.values(ticketsByDay),
-      },
-    });
-  };
+    // Fetch support staff performance data
+    const fetchSupportStaffData = async () => {
+      try {
+        const result = await getSupportStaffStats();
+        setSupportStaffData(result.supportStaffStats || []);
+      } catch (err) {
+        console.error("Error fetching support staff data:", err);
+      }
+    };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
-        labels: {
-          font: {
-            family: "Pixelated MS Sans Serif",
-            size: 12,
-          },
-          color: "#000000",
-        },
-      },
-      title: {
-        display: false,
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          font: {
-            family: "Pixelated MS Sans Serif",
-            size: 12,
-          },
-          color: "#000000",
-        },
-      },
-      y: {
-        ticks: {
-          font: {
-            family: "Pixelated MS Sans Serif",
-            size: 12,
-          },
-          color: "#000000",
-        },
-      },
-    },
-  };
-
-  const win98Colors = [
-    "#000080",
-    "#008080",
-    "#808000",
-    "#800080",
-    "#ff0000",
-    "#008000",
-    "#0000ff",
-  ];
-
-  const statusChartData = {
-    labels: ticketStats.byStatus.labels,
-    datasets: [
-      {
-        label: "Tickets by Status",
-        data: ticketStats.byStatus.data,
-        backgroundColor: win98Colors,
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const priorityChartData = {
-    labels: ticketStats.byPriority.labels,
-    datasets: [
-      {
-        label: "Tickets by Priority",
-        data: ticketStats.byPriority.data,
-        backgroundColor: win98Colors,
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const dailyChartData = {
-    labels: ticketStats.byDay.labels,
-    datasets: [
-      {
-        label: "Tickets Created",
-        data: ticketStats.byDay.data,
-        backgroundColor: "#000080",
-        borderColor: "#000080",
-        tension: 0.1,
-      },
-    ],
-  };
-
-  const renderCharts = () => {
-    return (
-      <div className="charts-container">
-        <div className="window" style={{ width: "100%", marginBottom: "16px" }}>
-          <div className="title-bar">
-            <div className="title-bar-text">Ticket Statistics</div>
-          </div>
-          <div className="window-body">
-            <div
-              className="field-row"
-              style={{ justifyContent: "space-between" }}
-            >
-              <div
-                className="chart-window"
-                style={{ width: "48%", height: "300px" }}
-              >
-                <div className="window" style={{ height: "100%" }}>
-                  <div className="title-bar">
-                    <div className="title-bar-text">Tickets By Status</div>
-                  </div>
-                  <div
-                    className="window-body"
-                    style={{ height: "calc(100% - 20px)" }}
-                  >
-                    <div style={{ height: "100%", padding: "8px" }}>
-                      <Pie data={statusChartData} options={chartOptions} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="chart-window"
-                style={{ width: "48%", height: "300px" }}
-              >
-                <div className="window" style={{ height: "100%" }}>
-                  <div className="title-bar">
-                    <div className="title-bar-text">Tickets By Priority</div>
-                  </div>
-                  <div
-                    className="window-body"
-                    style={{ height: "calc(100% - 20px)" }}
-                  >
-                    <div style={{ height: "100%", padding: "8px" }}>
-                      <Pie data={priorityChartData} options={chartOptions} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="chart-window"
-              style={{
-                width: "100%",
-                height: "300px",
-                marginTop: "16px",
-              }}
-            >
-              <div className="window" style={{ height: "100%" }}>
-                <div className="title-bar">
-                  <div className="title-bar-text">
-                    Tickets Created (Last 7 Days)
-                  </div>
-                </div>
-                <div
-                  className="window-body"
-                  style={{ height: "calc(100% - 20px)" }}
-                >
-                  <div style={{ height: "100%", padding: "8px" }}>
-                    <Line data={dailyChartData} options={chartOptions} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+    fetchTimelineData();
+    fetchSupportStaffData();
+  }, []);
 
   const formatStatusStats = (statusStats) => {
     if (!statusStats) return [];
@@ -415,6 +201,83 @@ const AdminDashboard = () => {
   const getSortClass = (field) => {
     if (sortField !== field) return "";
     return sortDirection === "asc" ? "sort-asc" : "sort-desc";
+  };
+
+  // Prepare status data for chart - with null check
+  const statusChartData = stats ? formatStatusStats(stats.statusStats) : [];
+
+  // Prepare priority data for chart - with null check
+  const priorityChartData =
+    stats && stats.priorityStats
+      ? stats.priorityStats.map((item) => ({
+          status: item._id,
+          count: item.count,
+        }))
+      : [];
+
+  // Function to render all charts
+  const renderCharts = () => {
+    // Don't render charts if stats isn't loaded yet
+    if (!stats) {
+      return (
+        <div className="window" style={{ width: "100%", marginBottom: "20px" }}>
+          <div className="title-bar">
+            <div className="title-bar-text">Loading Statistics</div>
+          </div>
+          <div className="window-body">
+            <p>Loading chart data, please wait...</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="charts-container" style={{ marginTop: "20px" }}>
+        <div className="window" style={{ width: "100%", marginBottom: "20px" }}>
+          <div className="title-bar">
+            <div className="title-bar-text">Ticket Creation Timeline</div>
+          </div>
+          <div className="window-body">
+            <TicketTimelineChart data={timelineData} />
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "20px",
+          }}
+        >
+          <div className="window" style={{ width: "49%" }}>
+            <div className="title-bar">
+              <div className="title-bar-text">Ticket Status Distribution</div>
+            </div>
+            <div className="window-body">
+              <TicketStatusChart data={statusChartData} />
+            </div>
+          </div>
+
+          <div className="window" style={{ width: "49%" }}>
+            <div className="title-bar">
+              <div className="title-bar-text">Ticket Priority Distribution</div>
+            </div>
+            <div className="window-body">
+              <TicketPriorityChart data={priorityChartData} />
+            </div>
+          </div>
+        </div>
+
+        <div className="window" style={{ width: "100%" }}>
+          <div className="title-bar">
+            <div className="title-bar-text">Support Staff Performance</div>
+          </div>
+          <div className="window-body">
+            <SupportStaffChart data={supportStaffData} />
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -476,7 +339,9 @@ const AdminDashboard = () => {
               </button>
             </div>
 
-            {renderCharts()}
+            <section className="dashboard-charts">
+              {loading ? <p>Loading charts...</p> : renderCharts()}
+            </section>
 
             <div className="dashboard-grid">
               <div className="window" style={{ width: "100%" }}>

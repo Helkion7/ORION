@@ -1,0 +1,23 @@
+{
+  "name": "orion",
+  "version": "1.0.0",
+  "description": "ORION project with frontend and backend",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "npm install && npm run install-frontend && npm run install-backend",
+    "install-frontend": "cd frontend && npm install",
+    "install-backend": "cd backend && npm install",
+    "start": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+    "start-frontend": "cd frontend && npm run dev",
+    "start-backend": "cd backend && npm start",
+    "dev": "concurrently \"npm run dev-backend\" \"npm run dev-frontend\"",
+    "dev-frontend": "cd frontend && npm run dev",
+    "dev-backend": "cd backend && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
